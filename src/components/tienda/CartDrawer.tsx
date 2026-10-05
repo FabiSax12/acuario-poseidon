@@ -2,7 +2,6 @@ import { Button } from "#/components/ds/Button";
 import { Dialog } from "#/components/ds/Dialog";
 import { IconButton } from "#/components/ds/IconButton";
 import { QuantityStepper } from "#/components/ds/QuantityStepper";
-import { imageUrl } from "#/data/catalog";
 import { money } from "#/lib/money";
 import { PhotoSlot } from "./PhotoSlot";
 import { useStore } from "./StoreProvider";
@@ -94,12 +93,12 @@ export function CartDrawer() {
 								flexShrink: 0,
 							}}
 						>
-							{product.img ? (
+							{product.image ? (
 								<div
 									style={{
 										position: "absolute",
 										inset: 0,
-										background: `url(${imageUrl(product.img)}) center/cover`,
+										background: `url("${product.image}") center/cover`,
 									}}
 								/>
 							) : (

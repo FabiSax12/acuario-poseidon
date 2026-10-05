@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "#/components/ds/Button";
 import { GlassPanel } from "#/components/ds/GlassPanel";
@@ -7,7 +8,8 @@ import { Parallax } from "#/components/ds/Parallax";
 import { ProductCard } from "#/components/ds/ProductCard";
 import { Reveal } from "#/components/ds/Reveal";
 import { VideoBackdrop } from "#/components/ds/VideoBackdrop";
-import { categories, imageUrl, products } from "#/data/catalog";
+import { categories, imageUrl } from "#/data/catalog";
+import { productsQueryOptions } from "#/data/queries/products";
 import { PhotoSlot } from "./PhotoSlot";
 import { useStore } from "./StoreProvider";
 
@@ -431,6 +433,7 @@ function CustomTankTeaser() {
 function FeaturedFish() {
 	const navigate = useNavigate();
 	const { add } = useStore();
+	const { data: products } = useSuspenseQuery(productsQueryOptions());
 	const items = products.filter((p) => p.cat === "Peces").slice(0, 4);
 	return (
 		<section
@@ -475,7 +478,7 @@ function FeaturedFish() {
 				{items.map((p, i) => (
 					<Reveal key={p.id} delay={i * 90}>
 						<ProductCard
-							image={p.img && imageUrl(p.img)}
+							image={p.image}
 							name={p.name}
 							subtitle={p.latin}
 							price={p.price}

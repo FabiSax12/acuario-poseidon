@@ -45,5 +45,5 @@ export function PhotoSlot({
 }
 
 /** Placeholder for a ProductCard's photo area when the product has no image. */
-export const productMedia = (product: Pick<Product, "img" | "icon">) =>
-	product.img ? undefined : <PhotoSlot icon={product.icon} />;
+export const productMedia = (product: Pick<Product, "image" | "icon">) =>
+	product.image ? undefined : <PhotoSlot icon={product.icon} />;

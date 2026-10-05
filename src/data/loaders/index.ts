@@ -3,6 +3,7 @@ import {
   getArticleByIdData,
   getArticleBySlugData,
 } from './articles'
+import { getProducts } from './products'
 
 /**
  * Strapi API - Server functions for fetching data from Strapi
@@ -24,5 +25,8 @@ export const strapiApi = {
     getArticlesData,
     getArticleByIdData,
     getArticleBySlugData,
+  },
+  products: {
+    getProducts,
   },
 }

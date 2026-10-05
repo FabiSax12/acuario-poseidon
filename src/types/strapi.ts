@@ -88,3 +88,40 @@ export type TStrapiResponse<T = null> = {
     pagination?: TStrapiPagination
   }
 }
+
+// Product content type (cms/src/api/product). Enum keys are ASCII; the
+// storefront labels live in src/lib/product-mapper.ts.
+export type TProductCategory = 'peces' | 'alimento' | 'equipos' | 'plantas'
+
+export type TProductWater = 'dulce' | 'salada'
+
+export type TProductSpec = {
+  id: number
+  text: string
+}
+
+export type TProduct = {
+  id: number
+  documentId: string
+  name: string
+  slug: string
+  category: TProductCategory
+  water?: TProductWater | null
+  subtitle?: string | null
+  price: number
+  compareAt?: number | null
+  image?: TImage | null
+  icon?: string | null
+  badgeLabel?: string | null
+  badgeTone?: string | null
+  specs?: Array<TProductSpec> | null
+  beginner?: boolean | null
+  inStock?: boolean | null
+  temp?: string | null
+  ph?: string | null
+  size?: string | null
+  mates?: string | null
+  createdAt?: string
+  updatedAt?: string
+  publishedAt?: string | null
+}

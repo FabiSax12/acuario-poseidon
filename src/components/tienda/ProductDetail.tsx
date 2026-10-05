@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Badge } from "#/components/ds/Badge";
@@ -7,7 +8,8 @@ import { Icon, type IconName } from "#/components/ds/Icon";
 import { ProductCard } from "#/components/ds/ProductCard";
 import { QuantityStepper } from "#/components/ds/QuantityStepper";
 import { Tooltip } from "#/components/ds/Tooltip";
-import { imageUrl, type Product, products } from "#/data/catalog";
+import type { Product } from "#/data/catalog";
+import { productsQueryOptions } from "#/data/queries/products";
 import { money } from "#/lib/money";
 import { PhotoSlot, productMedia } from "./PhotoSlot";
 import { useStore } from "./StoreProvider";
@@ -23,6 +25,7 @@ export function ProductDetail({ product: p }: { product: Product }) {
 	const navigate = useNavigate();
 	const { add } = useStore();
 	const [qty, setQty] = useState(1);
+	const { data: products } = useSuspenseQuery(productsQueryOptions());
 	const related = products
 		.filter((x) => x.cat === p.cat && x.id !== p.id)
 		.slice(0, 3);
@@ -99,12 +102,12 @@ export function ProductDetail({ product: p }: { product: Product }) {
 							overflow: "hidden",
 						}}
 					>
-						{p.img ? (
+						{p.image ? (
 							<div
 								style={{
 									position: "absolute",
 									inset: 0,
-									background: `url(${imageUrl(p.img)}) center/cover`,
+									background: `url("${p.image}") center/cover`,
 								}}
 							/>
 						) : (
@@ -252,7 +255,7 @@ export function ProductDetail({ product: p }: { product: Product }) {
 						{related.map((r) => (
 							<ProductCard
 								key={r.id}
-								image={r.img && imageUrl(r.img)}
+								image={r.image}
 								media={productMedia(r)}
 								name={r.name}
 								subtitle={r.latin}

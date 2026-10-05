@@ -5,8 +5,8 @@ Welcome to your new TanStack Start app!
 To run this application:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 # Building For Production
@@ -14,7 +14,7 @@ npm run dev
 To build this application for production:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ## Styling
@@ -36,9 +36,9 @@ This project uses [Biome](https://biomejs.dev/) for linting and formatting. The 
 
 
 ```bash
-npm run lint
-npm run format
-npm run check
+pnpm lint
+pnpm format
+pnpm check
 ```
 
 
@@ -57,171 +57,143 @@ Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
 unprefixed so they remain server-only.
 
 
-## Strapi CMS Integration
+## Catalogue (Strapi)
 
-This add-on integrates Strapi CMS with your TanStack Start application using the official Strapi Client SDK.
+Products live in a Strapi 5 backend in [`cms/`](./cms). Staff edit names,
+prices, photos and availability in the Strapi admin panel and the storefront
+shows the change within a minute, without a redeploy.
 
-### Features
+`cms/` is a standalone project with its own `package.json` and lockfile (pnpm).
+It is not part of the pnpm workspace, and the root Biome, Vitest, TypeScript and
+Vercel configs ignore it.
 
-- Article listing with search and pagination
-- Article detail pages with dynamic block rendering
-- Rich text, quotes, media, and image slider blocks
-- Markdown content rendering with GitHub Flavored Markdown
-- Responsive image handling with error fallbacks
-- URL-based search and pagination (shareable/bookmarkable)
-- Graceful error handling with helpful setup instructions
+### How the storefront reads it
 
-### Project Structure
+| Piece | File |
+|-------|------|
+| Server-only Strapi client (URL and token from env) | `src/data/strapi-sdk.ts` |
+| Server function `getProducts` | `src/data/loaders/products.ts` |
+| Catalogue read behind it: pagination, skip-and-log (unit tested with the client mocked) | `src/data/strapi-products.ts` |
+| Strapi entry to `Product` mapping (unit tested) | `src/lib/product-mapper.ts` |
+| TanStack Query options, 60 s stale time | `src/data/queries/products.ts` |
+| Route loaders and error screen | `src/routes/index.tsx`, `src/routes/tienda/`, `src/components/tienda/CatalogError.tsx` |
 
-```
-parent/
-├── client/                 # TanStack Start frontend (your project name)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── blocks/     # Block rendering components
-│   │   │   ├── markdown-content.tsx
-│   │   │   ├── pagination.tsx
-│   │   │   ├── search.tsx
-│   │   │   └── strapi-image.tsx
-│   │   ├── data/
-│   │   │   ├── loaders/    # Server functions
-│   │   │   └── strapi-sdk.ts
-│   │   ├── lib/
-│   │   │   └── strapi-utils.ts
-│   │   ├── routes/demo/
-│   │   │   ├── strapi.tsx              # Articles list
-│   │   │   └── strapi.$articleId.tsx   # Article detail
-│   │   └── types/
-│   │       └── strapi.ts
-│   ├── .env.local
-│   └── package.json
-└── server/                 # Strapi CMS backend (create manually or use hosted Strapi)
-    ├── src/api/            # Content types
-    ├── config/             # Strapi configuration
-    └── package.json
-```
+Strapi is only called from server functions, with a read-only API token. The
+browser receives plain `Product` objects and never talks to the Strapi API. It
+does load product photos straight from Strapi's public `/uploads` folder, so
+`STRAPI_URL` must be reachable from shoppers' browsers.
 
-### Quick Start
+There is one query, the product list. The product page selects its product
+from it, so list and detail always agree.
 
-Create your Strapi project separately (or use an existing hosted Strapi instance), then point this app to it with `VITE_STRAPI_URL`.
+A product the storefront cannot map (a category key it does not know, a price
+that is not a number) is left out and logged on the server as
+`[strapi] product "<slug>" skipped: <reason>`; the rest of the catalogue still
+renders. An unknown `water` key keeps the product and logs a warning.
 
-**1. Set up Strapi:**
+`Product.id` is the Strapi `slug`. Products are listed oldest first, which is
+the order the shop uses for "Relevancia" and the landing page uses to pick the
+four featured fish.
 
-Follow the Strapi quick-start guide to create a local project, or use your existing Strapi deployment:
+### Environment variables
 
-- https://docs.strapi.io/dev-docs/quick-start
-
-If you created a local Strapi project in a sibling `server` directory, continue with:
+Copy `.env.example` to `.env.local`:
 
 ```bash
-cd ../server
-npm install    # or pnpm install / yarn install
+STRAPI_URL=http://localhost:1337   # base URL, without /api
+STRAPI_API_TOKEN=...               # read-only token, see below
 ```
 
-**2. Start the Strapi server:**
+Both are server-only. Do not prefix them with `VITE_`.
+
+### First run
+
+Requires Node 22.18 or newer (the seed and token scripts are TypeScript files
+run by Node directly).
 
 ```bash
-npm run develop    # Starts at http://localhost:1337
+cd cms
+pnpm install
+pnpm seed      # demo products and their photos; safe to run again
+pnpm token     # prints STRAPI_API_TOKEN=... for ../.env.local
+pnpm develop   # Strapi at http://localhost:1337
 ```
 
-**3. Create an admin account:**
+Run `seed` and `token` while Strapi is stopped: they boot their own Strapi
+instance on the same SQLite file.
 
-Open http://localhost:1337/admin and create your first admin user.
+Then open http://localhost:1337/admin and create the first admin user (Strapi
+asks for it on the first visit; it is stored in the local database only).
 
-**4. Create content:**
-
-In the Strapi admin panel, go to Content Manager > Article and create some articles.
-
-**5. Start your TanStack app (in another terminal):**
+In another terminal, from the repo root:
 
 ```bash
-cd ../client   # or your project name
-npm run dev    # Starts at http://localhost:3000
+pnpm install
+pnpm dev          # storefront at http://localhost:3000
 ```
 
-**6. View the demo:**
+`cms/.env` holds Strapi's own secrets and is gitignored. If it is missing, copy
+`cms/.env.example` and fill in every empty secret with its own random string
+(`openssl rand -base64 32`; `APP_KEYS` takes four, comma-separated).
 
-Navigate to http://localhost:3000/demo/strapi to see your articles.
+### Creating the API token by hand
 
-### Environment Variables
+`pnpm token` creates a token named "Storefront (read-only)" that can only
+`find` and `findOne` products. To do the same in the admin panel:
 
-The following environment variable is pre-configured in `.env.local`:
+1. Go to **Settings > API Tokens > Create new API Token**.
+2. Name it, set **Token duration** to *Unlimited* and **Token type** to
+   *Custom*.
+3. Under **Permissions > Product**, tick `find` and `findOne` only.
+4. Save, copy the token (it is shown once) into `.env.local` as
+   `STRAPI_API_TOKEN`, and restart `pnpm dev`.
 
-```bash
-VITE_STRAPI_URL="http://localhost:1337"
-```
+Leave the **Public** role (Settings > Users & Permissions > Roles) without
+permissions, so the API cannot be read without the token.
 
-For production, update this to your deployed Strapi URL.
+### Product fields
 
-### Demo Pages
+| Strapi field | Type | Storefront |
+|--------------|------|------------|
+| `name` | text, required | name |
+| `slug` | UID from `name`, required | product URL (`/tienda/<slug>`) |
+| `category` | `peces`, `alimento`, `equipos`, `plantas` | category tab |
+| `water` | `dulce`, `salada`, optional | water filter |
+| `subtitle` | text | Latin name, or pack size / capacity |
+| `price`, `compareAt` | decimal | price and crossed-out price |
+| `image` | single image | photo; without one the `icon` placeholder is shown |
+| `icon` | enum | placeholder icon |
+| `badgeLabel`, `badgeTone` | text, enum | badge, shown only when both are set |
+| `specs` | repeatable `shared.spec { text }` | chips on the card |
+| `beginner`, `inStock` | boolean | "principiantes" filter, stock state |
+| `temp`, `ph`, `size`, `mates` | text | care sheet on the product page |
 
-| URL | Description |
-|-----|-------------|
-| `/demo/strapi` | Articles list with search and pagination |
-| `/demo/strapi/:articleId` | Article detail with block rendering |
+The enum keys are mapped to the Spanish labels in `src/lib/product-mapper.ts`.
+When you add a value to `icon` or `badgeTone` in Strapi, add it to the lists in
+that file too. Draft and publish is off: saving a product makes it live.
 
-### Search and Pagination
+The landing page category tiles and decorative images are static and stay in
+`src/data/catalog.ts`.
 
-- **Search**: Type in the search box to filter articles by title or description
-- **Pagination**: Navigate between pages using the pagination controls
-- **URL State**: Search and page are stored in the URL (`?query=term&page=2`)
+### Deploying
 
-### Block Types Supported
+Hosting Strapi is not set up yet. `.vercelignore` keeps `cms/` out of the
+storefront deployment. A hosted Strapi needs a persistent database and media
+storage (SQLite and local uploads do not survive on serverless hosts), and
+`STRAPI_URL` / `STRAPI_API_TOKEN` set in the storefront's environment. See
+"Before deploying" in [`cms/README.md`](./cms/README.md).
 
-| Block | Component | Description |
-|-------|-----------|-------------|
-| `shared.rich-text` | RichText | Markdown content |
-| `shared.quote` | Quote | Blockquote with author |
-| `shared.media` | Media | Single image/video |
-| `shared.slider` | Slider | Image gallery grid |
+### Article scaffold
 
-### Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `@strapi/client` | Official Strapi SDK |
-| `react-markdown` | Markdown rendering |
-| `remark-gfm` | GitHub Flavored Markdown |
-| `use-debounce` | Debounced search input |
-
-### Running Both Servers
-
-Open two terminal windows from the parent directory:
-
-**Terminal 1 - Strapi:**
-```bash
-cd server && npm run develop
-```
-
-**Terminal 2 - TanStack Start:**
-```bash
-cd client && npm run dev   # or your project name
-```
-
-### Customization
-
-**Change page size:**
-Edit `src/data/loaders/articles.ts` and modify `PAGE_SIZE`.
-
-**Add new block types:**
-1. Create component in `src/components/blocks/`
-2. Export from `src/components/blocks/index.ts`
-3. Add case to `block-renderer.tsx` switch statement
-4. Update populate in articles loader
-
-**Add new content types:**
-1. Add types to `src/types/strapi.ts`
-2. Create loader in `src/data/loaders/`
-3. Create route in `src/routes/demo/`
-
-### Learn More
-
-- [Strapi Documentation](https://docs.strapi.io/)
-- [Strapi Client SDK](https://www.npmjs.com/package/@strapi/client)
-- [Strapi Cloud Template Blog](https://github.com/strapi/strapi-cloud-template-blog)
-- [TanStack Start Documentation](https://tanstack.com/start/latest)
-- [TanStack Router Search Params](https://tanstack.com/router/latest/docs/framework/react/guide/search-params)
-
+The article loaders, block renderer and `StrapiImage` from the original
+TanStack add-on are still in the repo, unused, for a later guides section. They
+share the server-only client. `getStrapiMedia(url, baseUrl)` in
+`src/lib/strapi-utils.ts` no longer reads a public env var: make media URLs
+absolute on the server, as the product mapper does. `StrapiImage` passes no
+base URL, so a relative Strapi URL would resolve against the storefront origin;
+fix that when the articles are wired up. The article server functions validate
+their input (`src/lib/article-input.ts`) and use the same error sanitiser as
+the product loader.
 
 
 ## Routing

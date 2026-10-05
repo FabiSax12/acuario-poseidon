@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ProductCard } from "#/components/ds/ProductCard";
@@ -6,7 +7,8 @@ import { Select } from "#/components/ds/Select";
 import { Switch } from "#/components/ds/Switch";
 import { Tabs } from "#/components/ds/Tabs";
 import { Tag } from "#/components/ds/Tag";
-import { imageUrl, products, type WaterType } from "#/data/catalog";
+import type { WaterType } from "#/data/catalog";
+import { productsQueryOptions } from "#/data/queries/products";
 import {
 	countByCategory,
 	filterProducts,
@@ -22,6 +24,7 @@ import { useStore } from "./StoreProvider";
 export function Shop() {
 	const navigate = useNavigate();
 	const { add } = useStore();
+	const { data: products } = useSuspenseQuery(productsQueryOptions());
 	const [cat, setCat] = useState<ShopCategory>("Todo");
 	const [water, setWater] = useState<WaterType | null>(null);
 	const [beginner, setBeginner] = useState(false);
@@ -131,7 +134,7 @@ export function Shop() {
 						style={{ height: "100%" }}
 					>
 						<ProductCard
-							image={p.img && imageUrl(p.img)}
+							image={p.image}
 							media={productMedia(p)}
 							name={p.name}
 							subtitle={p.latin}
