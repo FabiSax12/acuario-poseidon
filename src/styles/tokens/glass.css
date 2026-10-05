@@ -1,0 +1,47 @@
+/* Liquid glass — the signature surface. Always sits over video or imagery. */
+:root {
+	--glass-tint-1: rgba(
+		200,
+		240,
+		250,
+		0.06
+	); /* whisper: large panels over busy video */
+	--glass-tint-2: rgba(200, 240, 250, 0.1); /* default */
+	--glass-tint-3: rgba(200, 240, 250, 0.16); /* hover / emphasised */
+	--glass-tint-dark: rgba(
+		2,
+		12,
+		18,
+		0.42
+	); /* smoked: text-heavy panels, legibility first */
+	--glass-stroke: rgba(255, 255, 255, 0.16);
+	--glass-stroke-strong: rgba(255, 255, 255, 0.28);
+	--glass-highlight:
+		inset 0 1px 0 rgba(255, 255, 255, 0.22),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.04); /* @kind shadow */
+	--blur-sm: 8px; /* @kind other */
+	--blur-md: 18px; /* @kind other */
+	--blur-lg: 32px; /* @kind other */
+	--blur-xl: 56px; /* @kind other */
+	--glass-filter: blur(var(--blur-md)) saturate(160%); /* @kind other */
+	--glass-filter-strong: blur(var(--blur-lg)) saturate(180%); /* @kind other */
+	--glass-bg: var(--glass-tint-2);
+	--glass-border: 1px solid var(--glass-stroke); /* @kind other */
+	/* Video scrims (protection gradients) */
+	--scrim-top: linear-gradient(
+		180deg,
+		rgba(2, 9, 13, 0.72) 0%,
+		rgba(2, 9, 13, 0) 100%
+	); /* @kind color */
+	--scrim-bottom: linear-gradient(
+		0deg,
+		rgba(2, 9, 13, 0.92) 0%,
+		rgba(2, 9, 13, 0) 100%
+	); /* @kind color */
+	--scrim-full: linear-gradient(
+		180deg,
+		rgba(4, 18, 26, 0.35) 0%,
+		rgba(4, 18, 26, 0.55) 60%,
+		rgba(4, 18, 26, 0.95) 100%
+	); /* @kind color */
+}

@@ -1,17 +1,39 @@
-
 @import "tailwindcss";
 
-* {
-  box-sizing: border-box;
+/* Fonts: npm packages stand in for the design's self-hosted woff2 files. */
+@import "@fontsource-variable/figtree/wght.css";
+@import "@fontsource-variable/figtree/wght-italic.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+@import "@fontsource/marcellus/400.css";
+
+/* Design tokens and element defaults (same order as the design's styles.css).
+   These are unlayered, so they win over Tailwind's layered theme and preflight. */
+@import "./styles/tokens/colors.css";
+@import "./styles/tokens/glass.css";
+@import "./styles/tokens/typography.css";
+@import "./styles/tokens/spacing.css";
+@import "./styles/tokens/radius.css";
+@import "./styles/tokens/elevation.css";
+@import "./styles/tokens/motion.css";
+@import "./styles/tokens/base.css";
+
+/* The design was built without a CSS reset: its sizes assume the browser's
+   default box model (content-box, except form controls), and components opt
+   into border-box inline where they need it. Preflight forces border-box on
+   everything, which shrinks every padded max-width container, so hand
+   box-sizing back to the browser. */
+*,
+::before,
+::after,
+::backdrop {
+  box-sizing: revert;
 }
 
 html,
-body,
-#app {
+body {
   min-height: 100%;
 }
 
 body {
-  margin: 0;
+  overflow-x: hidden;
 }
-

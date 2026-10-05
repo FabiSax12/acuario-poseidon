@@ -1,0 +1,72 @@
+/* Acuario Poseidón — colour tokens. Dark-first: the brand lives underwater. */
+:root {
+	/* Abyss — deep-water neutrals (backgrounds, ink on light) */
+	--abyss-950: #02090d;
+	--abyss-900: #04121a;
+	--abyss-800: #071d29;
+	--abyss-700: #0c2b3b;
+	--abyss-600: #12404f;
+	--abyss-500: #1b5866;
+	/* Tide — bioluminescent aqua, the primary accent */
+	--tide-100: #d6fbf7;
+	--tide-200: #a6f2ea;
+	--tide-300: #6fe6da;
+	--tide-400: #3fd3c6;
+	--tide-500: #1fb3a7;
+	--tide-600: #138c84;
+	--tide-700: #0e6862;
+	/* Coral — warm secondary: offers, live stock, attention */
+	--coral-200: #ffd4c6;
+	--coral-300: #ffb39c;
+	--coral-400: #ff8a68;
+	--coral-500: #f2643f;
+	--coral-600: #c94a2a;
+	/* Bronze — the trident; premium & made-to-measure tanks */
+	--bronze-200: #f5e6c4;
+	--bronze-300: #ecd39a;
+	--bronze-400: #d9b46a;
+	--bronze-500: #b8914a;
+	--bronze-600: #8a6a32;
+	/* Pearl — light neutrals */
+	--pearl-0: #ffffff;
+	--pearl-50: #f6f3ec;
+	--pearl-100: #ebe6db;
+	--pearl-200: #d5d0c4;
+	--pearl-300: #aab2b4;
+	--pearl-400: #7d8a8f;
+	--pearl-500: #56656b;
+	/* Semantic bases */
+	--kelp-400: #4fd18b;
+	--kelp-600: #24995a;
+	--sun-400: #f5c451;
+	--sun-600: #b98a14;
+	--urchin-400: #ff5f6d;
+	--urchin-600: #c7303f;
+
+	/* Semantic aliases — text */
+	--text-strong: var(--pearl-0);
+	--text-body: rgba(240, 250, 252, 0.86);
+	--text-muted: rgba(214, 232, 238, 0.62);
+	--text-faint: rgba(214, 232, 238, 0.42);
+	--text-accent: var(--tide-300);
+	--text-on-accent: var(--abyss-950);
+	--text-ink: var(--abyss-900); /* text on pearl surfaces */
+	--text-ink-muted: var(--pearl-500);
+	/* Surfaces */
+	--surface-page: var(--abyss-900);
+	--surface-deep: var(--abyss-950);
+	--surface-raised: var(--abyss-800);
+	--surface-pearl: var(--pearl-50);
+	/* Accents & state */
+	--accent: var(--tide-400);
+	--accent-hover: var(--tide-300);
+	--accent-press: var(--tide-500);
+	--accent-warm: var(--coral-400);
+	--accent-premium: var(--bronze-400);
+	--success: var(--kelp-400);
+	--warning: var(--sun-400);
+	--danger: var(--urchin-400);
+	--info: var(--tide-300);
+	--focus-ring:
+		0 0 0 2px var(--abyss-900), 0 0 0 4px var(--tide-300); /* @kind shadow */
+}

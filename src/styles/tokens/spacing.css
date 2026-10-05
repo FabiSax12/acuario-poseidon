@@ -1,0 +1,21 @@
+:root {
+	--space-0: 0;
+	--space-1: 2px;
+	--space-2: 4px;
+	--space-3: 8px;
+	--space-4: 12px;
+	--space-5: 16px;
+	--space-6: 20px;
+	--space-7: 24px;
+	--space-8: 32px;
+	--space-9: 40px;
+	--space-10: 56px;
+	--space-11: 72px;
+	--space-12: 96px;
+	--space-13: 128px;
+	--gutter: clamp(20px, 4vw, 56px); /* @kind spacing */
+	--container-max: 1240px; /* @kind spacing */
+	--container-narrow: 760px; /* @kind spacing */
+	--nav-height: 72px; /* @kind spacing */
+	--hit-min: 44px; /* @kind spacing */ /* never smaller — owner and many customers use touch / assistive tech */
+}
