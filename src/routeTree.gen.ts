@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PecerasAMedidaRouteImport } from './routes/peceras-a-medida'
+import { Route as TiendaIndexRouteImport } from './routes/tienda/index'
+import { Route as TiendaProductIdRouteImport } from './routes/tienda/$productId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PecerasAMedidaRoute = PecerasAMedidaRouteImport.update({
+  id: '/peceras-a-medida',
+  path: '/peceras-a-medida',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TiendaIndexRoute = TiendaIndexRouteImport.update({
+  id: '/tienda/',
+  path: '/tienda/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TiendaProductIdRoute = TiendaProductIdRouteImport.update({
+  id: '/tienda/$productId',
+  path: '/tienda/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/peceras-a-medida': typeof PecerasAMedidaRoute
+  '/tienda/$productId': typeof TiendaProductIdRoute
+  '/tienda/': typeof TiendaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/peceras-a-medida': typeof PecerasAMedidaRoute
+  '/tienda/$productId': typeof TiendaProductIdRoute
+  '/tienda': typeof TiendaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/peceras-a-medida': typeof PecerasAMedidaRoute
+  '/tienda/$productId': typeof TiendaProductIdRoute
+  '/tienda/': typeof TiendaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/peceras-a-medida' | '/tienda/$productId' | '/tienda/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/peceras-a-medida' | '/tienda/$productId' | '/tienda'
+  id: '__root__' | '/' | '/peceras-a-medida' | '/tienda/$productId' | '/tienda/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PecerasAMedidaRoute: typeof PecerasAMedidaRoute
+  TiendaProductIdRoute: typeof TiendaProductIdRoute
+  TiendaIndexRoute: typeof TiendaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +78,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/peceras-a-medida': {
+      id: '/peceras-a-medida'
+      path: '/peceras-a-medida'
+      fullPath: '/peceras-a-medida'
+      preLoaderRoute: typeof PecerasAMedidaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tienda/': {
+      id: '/tienda/'
+      path: '/tienda'
+      fullPath: '/tienda/'
+      preLoaderRoute: typeof TiendaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tienda/$productId': {
+      id: '/tienda/$productId'
+      path: '/tienda/$productId'
+      fullPath: '/tienda/$productId'
+      preLoaderRoute: typeof TiendaProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PecerasAMedidaRoute: PecerasAMedidaRoute,
+  TiendaProductIdRoute: TiendaProductIdRoute,
+  TiendaIndexRoute: TiendaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
