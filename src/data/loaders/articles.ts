@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
-import { sdk } from '@/data/strapi-sdk'
+import { getStrapiClient, readFromStrapi } from '@/data/strapi-sdk'
+import { parseArticleKey, parseArticleListInput } from '@/lib/article-input'
 import type {
   TArticle,
   TStrapiResponseCollection,
@@ -8,7 +9,8 @@ import type {
 
 const PAGE_SIZE = 3
 
-const articles = sdk.collection('articles')
+// Created per call: the client reads server-only env vars.
+const articles = () => getStrapiClient().collection('articles')
 
 /**
  * Fetch articles with optional filtering, search, and pagination
@@ -46,7 +48,7 @@ const getArticles = async (
         ? filterConditions[0]
         : { $and: filterConditions }
 
-  return articles.find({
+  return articles().find({
     sort: ['createdAt:desc'],
     pagination: {
       page: page || 1,
@@ -61,7 +63,7 @@ const getArticles = async (
  * Fetch a single article by documentId
  */
 const getArticleById = async (documentId: string) => {
-  return articles.findOne(documentId, {
+  return articles().findOne(documentId, {
     populate: ['cover', 'author', 'category', 'blocks.file', 'blocks.files'],
   }) as Promise<TStrapiResponseSingle<TArticle>>
 }
@@ -70,7 +72,7 @@ const getArticleById = async (documentId: string) => {
  * Fetch a single article by slug
  */
 const getArticleBySlug = async (slug: string) => {
-  return articles.find({
+  return articles().find({
     filters: {
       slug: { $eq: slug },
     },
@@ -78,37 +80,37 @@ const getArticleBySlug = async (slug: string) => {
   }) as Promise<TStrapiResponseCollection<TArticle>>
 }
 
-// Server Functions - these run on the server and can be called from components
+// Server Functions - these run on the server and can be called from components.
+// Inputs are validated (strings and bounded numbers only reach the Strapi
+// query) and failures go through the same sanitiser as the product loader.
 
 export const getArticlesData = createServerFn({
   method: 'GET',
 })
   .inputValidator(
-    (input?: { page?: number; category?: string; query?: string }) => input,
+    (input?: { page?: number; category?: string; query?: string }) =>
+      parseArticleListInput(input),
   )
-  .handler(async ({ data }): Promise<TStrapiResponseCollection<TArticle>> => {
-    const response = await getArticles(data?.page, data?.category, data?.query)
-    return response
-  })
+  .handler(({ data }): Promise<TStrapiResponseCollection<TArticle>> =>
+    readFromStrapi('articles list', () =>
+      getArticles(data.page, data.category, data.query),
+    ),
+  )
 
 export const getArticleByIdData = createServerFn({
   method: 'GET',
 })
-  .inputValidator((documentId: string) => documentId)
-  .handler(
-    async ({ data: documentId }): Promise<TStrapiResponseSingle<TArticle>> => {
-      const response = await getArticleById(documentId)
-      return response
-    },
+  .inputValidator((documentId: string) =>
+    parseArticleKey(documentId, 'documentId'),
+  )
+  .handler(({ data: documentId }): Promise<TStrapiResponseSingle<TArticle>> =>
+    readFromStrapi('article by id', () => getArticleById(documentId)),
   )
 
 export const getArticleBySlugData = createServerFn({
   method: 'GET',
 })
-  .inputValidator((slug: string) => slug)
-  .handler(
-    async ({ data: slug }): Promise<TStrapiResponseCollection<TArticle>> => {
-      const response = await getArticleBySlug(slug)
-      return response
-    },
+  .inputValidator((slug: string) => parseArticleKey(slug, 'slug'))
+  .handler(({ data: slug }): Promise<TStrapiResponseCollection<TArticle>> =>
+    readFromStrapi('article by slug', () => getArticleBySlug(slug)),
   )
