@@ -1,0 +1,2 @@
+# The Strapi backend is deployed separately; the storefront build ignores it.
+cms/
