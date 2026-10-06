@@ -93,7 +93,13 @@ export const product = defineType({
       title: 'Precio anterior',
       description: 'Se muestra tachado junto al precio.',
       type: 'number',
-      validation: (rule) => rule.min(0),
+      // The storefront drops a previous price that is not higher than the price.
+      validation: (rule) =>
+        rule.min(0).custom((compareAt, context) => {
+          const price = context.document?.price;
+          if (typeof compareAt !== 'number' || typeof price !== 'number') return true;
+          return compareAt > price || 'El precio anterior debe ser mayor que el precio.';
+        }),
     }),
     defineField({
       name: 'image',

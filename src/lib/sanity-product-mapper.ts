@@ -116,8 +116,8 @@ const specText = (spec: unknown) =>
  * no usable price) is rejected with a reason instead of throwing, so the
  * caller can leave it out and keep the rest of the catalogue. `warnings` lists
  * fields that were dropped from an accepted product (a badge needs both its
- * label and a known tone). The caller decides what
- * to log.
+ * label and a known tone; a previous price must be higher than the price). The
+ * caller decides what to log.
  */
 export function mapSanityProduct(
 	doc: SanityProduct,
@@ -160,8 +160,15 @@ export function mapSanityProduct(
 	}
 	if (doc.compareAt != null) {
 		const compareAt = toAmount(doc.compareAt);
-		if (compareAt !== undefined) product.compareAt = compareAt;
-		else warnings.push("compareAt is not a valid number");
+		if (compareAt === undefined) {
+			warnings.push("compareAt is not a valid number");
+		} else if (compareAt > price) {
+			product.compareAt = compareAt;
+		} else {
+			// A previous price that is not higher would be struck through next to
+			// a current price that is the same or more expensive.
+			warnings.push("compareAt dropped: it must be greater than price");
+		}
 	}
 	if (doc.image?.asset) {
 		try {

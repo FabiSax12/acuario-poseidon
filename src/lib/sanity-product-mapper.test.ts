@@ -126,6 +126,28 @@ describe("mapSanityProduct", () => {
 		expect(result.warnings).toEqual(["compareAt is not a valid number"]);
 	});
 
+	it.each([
+		["lower than", 20],
+		["equal to", 24],
+	])("drops a compareAt that is %s the price and warns", (_case, compareAt) => {
+		const result = mapSanityProduct(doc({ price: 24, compareAt }), PROJECT);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.product).not.toHaveProperty("compareAt");
+		expect(result.warnings).toEqual([
+			"compareAt dropped: it must be greater than price",
+		]);
+	});
+
+	it("keeps a compareAt that is greater than the price", () => {
+		const result = mapSanityProduct(doc({ price: 24, compareAt: 30 }), PROJECT);
+		expect(result).toMatchObject({
+			ok: true,
+			product: { compareAt: 30 },
+			warnings: [],
+		});
+	});
+
 	it("maps subtitle to latin, trimmed, defaulting to an empty string", () => {
 		expect(toProduct(doc({ subtitle: " Amphiprion ocellaris " })).latin).toBe(
 			"Amphiprion ocellaris",
