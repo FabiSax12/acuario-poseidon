@@ -17,7 +17,6 @@
     "biome",
     "vercel",
     "sentry",
-    "strapi",
     "compiler",
     "tanstack-query"
   ]

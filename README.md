@@ -64,7 +64,7 @@ or media storage to run.
 
 Vercel runs the build script and deploys Nitro's output as Vercel Functions and
 static assets. The included `vercel.json` makes framework detection explicit.
-`.vercelignore` keeps `studio/` and `cms/` out of the deployment.
+`.vercelignore` keeps `studio/` out of the deployment.
 
 Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
 unprefixed so they remain server-only. The storefront has no Sanity token: do
@@ -212,16 +212,6 @@ file too. Sanity keeps drafts: a product goes live when it is published.
 
 The landing page category tiles and decorative images are static and stay in
 `src/data/catalog.ts`.
-
-### Legacy: Strapi (`cms/`)
-
-The catalogue used to come from a Strapi 5 backend in [`cms/`](./cms). The
-storefront no longer reads it. It is kept until the Sanity setup is verified
-end to end, and is then removed together with `@strapi/client`,
-`src/data/strapi-sdk.ts`, `src/data/strapi-products.ts`,
-`src/lib/product-mapper.ts`, `src/lib/strapi-utils.ts`,
-`src/components/strapi-image.tsx`, `src/data/loaders/articles.ts` and the
-`STRAPI_*` variables in `.env.example`.
 
 
 ## Routing

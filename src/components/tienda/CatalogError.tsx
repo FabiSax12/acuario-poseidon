@@ -1,7 +1,7 @@
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Button } from "#/components/ds/Button";
 
-// Route error component for the screens that read the catalogue from Strapi.
+// Route error component for the screens that read the catalogue from Sanity.
 // Laid out like NotFound so an outage still lands inside the storefront shell.
 // The underlying error is not shown to shoppers; it is logged on the server.
 export function CatalogError() {

@@ -12,8 +12,7 @@ export default defineConfig({
 	test: {
 		environment: "node",
 		include: ["src/**/*.test.ts"],
-		// The Sanity Studio and the legacy Strapi backend are separate projects
-		// with their own tooling.
-		exclude: [...configDefaults.exclude, "cms/**", "studio/**"],
+		// The Sanity Studio is a separate project with its own tooling.
+		exclude: [...configDefaults.exclude, "studio/**"],
 	},
 });

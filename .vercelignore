@@ -1,5 +1,3 @@
 # The Sanity Studio is deployed to Sanity's hosting with `sanity deploy`; the
 # storefront build ignores it.
 studio/
-# Legacy Strapi backend, pending removal.
-cms/

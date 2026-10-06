@@ -1,27 +1,24 @@
-import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
-
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-
-import viteReact, { reactCompilerPreset } from '@vitejs/plugin-react'
-import babel from '@rolldown/plugin-babel'
-import tailwindcss from '@tailwindcss/vite'
-import { nitro } from 'nitro/vite'
+import babel from "@rolldown/plugin-babel";
+import tailwindcss from "@tailwindcss/vite";
+import { devtools } from "@tanstack/devtools-vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
+import { defineConfig } from "vite";
 
 const config = defineConfig({
-  resolve: { tsconfigPaths: true },
-  // The Sanity Studio in studio/ and the legacy Strapi backend in cms/ are
-  // separate projects; their databases, uploads and build output must not
-  // trigger reloads here.
-  server: { watch: { ignored: ['**/cms/**', '**/studio/**'] } },
-  plugins: [
-    devtools(),
-    nitro(),
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-    babel({ presets: [reactCompilerPreset()] }),
-  ],
-})
+	resolve: { tsconfigPaths: true },
+	// The Sanity Studio in studio/ is a separate project; its build output must
+	// not trigger reloads here.
+	server: { watch: { ignored: ["**/studio/**"] } },
+	plugins: [
+		devtools(),
+		nitro(),
+		tailwindcss(),
+		tanstackStart(),
+		viteReact(),
+		babel({ presets: [reactCompilerPreset()] }),
+	],
+});
 
-export default config
+export default config;
