@@ -77,10 +77,11 @@ all of them pass.
 
 The deploy job then runs `vercel pull`, `vercel build` and
 `vercel deploy --prebuilt` (with `--prod` on `main`). The build happens on the
-GitHub runner; Vercel receives the finished output. `vercel build` sets
-`VERCEL=1`, which makes Nitro write Vercel Functions and static assets to
-`.vercel/output` instead of the Node server in `.output` that `pnpm build`
-produces locally. `.vercelignore` keeps `studio/` out of the deployment.
+GitHub runner; Vercel receives the finished output. The build step sets
+`NITRO_PRESET=vercel`, which makes Nitro write Vercel Functions and static
+assets to `.vercel/output` instead of the Node server in `.output` that
+`pnpm build` produces locally. Without it Nitro builds the Node server and the
+deployment answers `404 NOT_FOUND` on every page. `.vercelignore` keeps `studio/` out of the deployment.
 
 The deployment URL is in the run summary and on the `preview` or `production`
 environment of the repo. On a pull request it also appears as a **View
