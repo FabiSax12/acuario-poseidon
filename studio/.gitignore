@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Compiled Studio and the CLI's runtime files
+dist/
+.sanity/
+*.tsbuildinfo
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Logs and OS files
+*.log
+.DS_Store

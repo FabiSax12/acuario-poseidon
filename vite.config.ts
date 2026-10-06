@@ -10,9 +10,10 @@ import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
-  // The Strapi backend in cms/ is a separate project; its database, uploads
-  // and build output must not trigger reloads here.
-  server: { watch: { ignored: ['**/cms/**'] } },
+  // The Sanity Studio in studio/ and the legacy Strapi backend in cms/ are
+  // separate projects; their databases, uploads and build output must not
+  // trigger reloads here.
+  server: { watch: { ignored: ['**/cms/**', '**/studio/**'] } },
   plugins: [
     devtools(),
     nitro(),

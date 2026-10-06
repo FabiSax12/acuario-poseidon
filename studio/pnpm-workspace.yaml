@@ -1,0 +1,2 @@
+# Standalone project: this file keeps pnpm from treating studio/ as part of
+# the storefront in the parent directory.

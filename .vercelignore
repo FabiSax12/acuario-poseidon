@@ -1,2 +1,5 @@
-# The Strapi backend is deployed separately; the storefront build ignores it.
+# The Sanity Studio is deployed to Sanity's hosting with `sanity deploy`; the
+# storefront build ignores it.
+studio/
+# Legacy Strapi backend, pending removal.
 cms/
