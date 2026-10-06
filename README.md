@@ -44,156 +44,184 @@ pnpm check
 
 ## Deploy to Vercel
 
+The storefront runs on Vercel. The catalogue and its editing panel are hosted
+by Sanity (see [Catalogue](#catalogue-sanity)), so there is no server, database
+or media storage to run.
+
 1. Push this repo to GitHub, GitLab, or Bitbucket
 2. In Vercel, choose **Add New > Project** and import the repo
 3. Keep the detected TanStack Start framework settings
-4. Add production values from `.env.example` under **Settings > Environment Variables**
+4. Under **Settings > Environment Variables**, add:
+
+   | Variable | Value |
+   |----------|-------|
+   | `SANITY_PROJECT_ID` | Sanity project id |
+   | `SANITY_DATASET` | `production` |
+   | `SANITY_API_VERSION` | optional; defaults to the date pinned in `src/data/sanity-client.ts` |
+   | `VITE_SENTRY_DSN` and the other Sentry values | from `.env.example` |
+
 5. Deploy
 
 Vercel runs the build script and deploys Nitro's output as Vercel Functions and
 static assets. The included `vercel.json` makes framework detection explicit.
+`.vercelignore` keeps `studio/` and `cms/` out of the deployment.
 
 Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
-unprefixed so they remain server-only.
+unprefixed so they remain server-only. The storefront has no Sanity token: do
+not add `SANITY_WRITE_TOKEN` to Vercel.
+
+### CDN cache
+
+The catalogue pages (`/`, `/tienda`, `/tienda/<slug>`) and the `getProducts`
+server function answer with:
+
+```
+Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=300
+```
+
+Vercel's CDN serves one copy for 5 minutes, then keeps serving it for 5 more
+while it refreshes in the background; after that the next visitor waits for a
+fresh read. A change published in the Studio therefore shows up in the shop
+within about 10 minutes at worst, and Sanity receives a few requests per hour
+instead of one per visit. Browsers always revalidate (`max-age=0`).
+
+These answer with `Cache-Control: no-store` instead, so the CDN never keeps
+them:
+
+- a product page that ends in "not found";
+- a page or `getProducts` call whose catalogue read failed;
+- an empty catalogue (empty or wrong dataset, or every product failed to map).
+
+The policy lives in `src/lib/cache-headers.ts`. The `getProducts` response is
+shared between visitors, so it must not depend on who asks.
+
+To check it after a deploy, request a page twice; the second response carries
+`x-vercel-cache: HIT`:
+
+```bash
+curl -sI https://<shop-domain>/tienda | grep -i -E "cache-control|x-vercel-cache"
+```
 
 
-## Catalogue (Strapi)
+## Catalogue (Sanity)
 
-Products live in a Strapi 5 backend in [`cms/`](./cms). Staff edit names,
-prices, photos and availability in the Strapi admin panel and the storefront
-shows the change within a minute, without a redeploy.
+Products live in a [Sanity](https://www.sanity.io) project. Staff edit names,
+prices, photos and availability in the Sanity Studio, hosted by Sanity at
+`https://<hostname>.sanity.studio`, and the storefront shows a published change
+within about 10 minutes at worst, without a redeploy.
 
-`cms/` is a standalone project with its own `package.json` and lockfile (pnpm).
-It is not part of the pnpm workspace, and the root Biome, Vitest, TypeScript and
-Vercel configs ignore it.
+The Studio's source (schema, configuration, seed) is in [`studio/`](./studio).
+It is a standalone project with its own `package.json` and lockfile (pnpm). It
+is not part of the pnpm workspace, and the root Biome, Vitest, TypeScript and
+Vercel configs ignore it. Setup, seeding, deploying the Studio, CORS origins
+and inviting staff are covered in [`studio/README.md`](./studio/README.md).
+
+The dataset is public (Sanity's free plan has no private datasets). Anyone can
+read it through the Sanity API, so it must only hold what the shop already
+shows.
 
 ### How the storefront reads it
 
 | Piece | File |
 |-------|------|
-| Server-only Strapi client (URL and token from env) | `src/data/strapi-sdk.ts` |
+| Server-only Sanity client (project and dataset from env, no token) | `src/data/sanity-client.ts` |
 | Server function `getProducts` | `src/data/loaders/products.ts` |
-| Catalogue read behind it: pagination, skip-and-log (unit tested with the client mocked) | `src/data/strapi-products.ts` |
-| Strapi entry to `Product` mapping (unit tested) | `src/lib/product-mapper.ts` |
+| Its body: read plus cache headers (unit tested) | `src/data/products-handler.ts` |
+| Catalogue read behind it: one GROQ query, skip-and-log (unit tested with the client mocked) | `src/data/sanity-products.ts` |
+| Sanity document to `Product` mapping (unit tested) | `src/lib/sanity-product-mapper.ts` |
+| CDN cache policy (unit tested) | `src/lib/cache-headers.ts` |
 | TanStack Query options, 60 s stale time | `src/data/queries/products.ts` |
 | Route loaders and error screen | `src/routes/index.tsx`, `src/routes/tienda/`, `src/components/tienda/CatalogError.tsx` |
 
-Strapi is only called from server functions, with a read-only API token. The
-browser receives plain `Product` objects and never talks to the Strapi API. It
-does load product photos straight from Strapi's public `/uploads` folder, so
-`STRAPI_URL` must be reachable from shoppers' browsers.
+Sanity is only queried from server functions, through Sanity's API CDN, and
+only for published documents. The browser receives plain `Product` objects and
+never talks to the Sanity API. It does load product photos straight from
+Sanity's image CDN (`cdn.sanity.io`), resized to 1200 px wide at most and in
+the best format the browser accepts (`auto=format`).
 
 There is one query, the product list. The product page selects its product
 from it, so list and detail always agree.
 
-A product the storefront cannot map (a category key it does not know, a price
-that is not a number) is left out and logged on the server as
-`[strapi] product "<slug>" skipped: <reason>`; the rest of the catalogue still
-renders. An unknown `water` key keeps the product and logs a warning.
+A product the storefront cannot map (no slug or name, a category key it does
+not know, a price that is not a number) is left out and logged on the server
+as `[sanity] product "<slug>" skipped: <reason>`; the rest of the catalogue
+still renders. A second product with a slug already in use is skipped and
+logged the same way; the oldest one is kept. An unknown `water` key, a photo
+that cannot be resolved, or a badge with only one of its label and tone keeps
+the product and logs a warning.
 
-`Product.id` is the Strapi `slug`. Products are listed oldest first, which is
-the order the shop uses for "Relevancia" and the landing page uses to pick the
-four featured fish.
+`Product.id` is the Sanity `slug`. Products are listed oldest first
+(`_createdAt`), which is the order the shop uses for "Relevancia" and the
+landing page uses to pick the four featured fish.
 
 ### Environment variables
 
 Copy `.env.example` to `.env.local`:
 
 ```bash
-STRAPI_URL=http://localhost:1337   # base URL, without /api
-STRAPI_API_TOKEN=...               # read-only token, see below
+SANITY_PROJECT_ID=...        # from sanity.io/manage
+SANITY_DATASET=production
+SANITY_API_VERSION=          # optional, YYYY-MM-DD
 ```
 
-Both are server-only. Do not prefix them with `VITE_`.
+All three are server-only. Do not prefix them with `VITE_`.
+
+The Studio and the seed use differently named variables, in `studio/.env`:
+
+| Read by | Project | Dataset |
+|---------|---------|---------|
+| Storefront (`.env.local`, Vercel) | `SANITY_PROJECT_ID` | `SANITY_DATASET` |
+| Studio and seed (`studio/.env`) | `SANITY_STUDIO_PROJECT_ID` | `SANITY_STUDIO_DATASET` |
+
+Both pairs must point at the same project and dataset. If they differ, staff
+edit one dataset while the shop reads another, and the shop is empty (or shows
+old products) with no error.
 
 ### First run
 
-Requires Node 22.18 or newer (the seed and token scripts are TypeScript files
-run by Node directly).
-
-```bash
-cd cms
-pnpm install
-pnpm seed      # demo products and their photos; safe to run again
-pnpm token     # prints STRAPI_API_TOKEN=... for ../.env.local
-pnpm develop   # Strapi at http://localhost:1337
-```
-
-Run `seed` and `token` while Strapi is stopped: they boot their own Strapi
-instance on the same SQLite file.
-
-Then open http://localhost:1337/admin and create the first admin user (Strapi
-asks for it on the first visit; it is stored in the local database only).
-
-In another terminal, from the repo root:
+Requires Node 22.18 or newer. Create the Sanity project and load the demo
+catalogue first: follow "First-time setup" in
+[`studio/README.md`](./studio/README.md). Then, from the repo root:
 
 ```bash
 pnpm install
 pnpm dev          # storefront at http://localhost:3000
 ```
 
-`cms/.env` holds Strapi's own secrets and is gitignored. If it is missing, copy
-`cms/.env.example` and fill in every empty secret with its own random string
-(`openssl rand -base64 32`; `APP_KEYS` takes four, comma-separated).
-
-### Creating the API token by hand
-
-`pnpm token` creates a token named "Storefront (read-only)" that can only
-`find` and `findOne` products. To do the same in the admin panel:
-
-1. Go to **Settings > API Tokens > Create new API Token**.
-2. Name it, set **Token duration** to *Unlimited* and **Token type** to
-   *Custom*.
-3. Under **Permissions > Product**, tick `find` and `findOne` only.
-4. Save, copy the token (it is shown once) into `.env.local` as
-   `STRAPI_API_TOKEN`, and restart `pnpm dev`.
-
-Leave the **Public** role (Settings > Users & Permissions > Roles) without
-permissions, so the API cannot be read without the token.
-
 ### Product fields
 
-| Strapi field | Type | Storefront |
+| Sanity field | Type | Storefront |
 |--------------|------|------------|
-| `name` | text, required | name |
-| `slug` | UID from `name`, required | product URL (`/tienda/<slug>`) |
+| `name` | string, required | name |
+| `slug` | slug from `name`, required, unique | product URL (`/tienda/<slug>`) |
 | `category` | `peces`, `alimento`, `equipos`, `plantas` | category tab |
 | `water` | `dulce`, `salada`, optional | water filter |
-| `subtitle` | text | Latin name, or pack size / capacity |
-| `price`, `compareAt` | decimal | price and crossed-out price |
-| `image` | single image | photo; without one the `icon` placeholder is shown |
-| `icon` | enum | placeholder icon |
-| `badgeLabel`, `badgeTone` | text, enum | badge, shown only when both are set |
-| `specs` | repeatable `shared.spec { text }` | chips on the card |
+| `subtitle` | string | Latin name, or pack size / capacity |
+| `price`, `compareAt` | number | price and crossed-out price |
+| `image` | image with hotspot | photo; without one the `icon` placeholder is shown |
+| `icon` | list | placeholder icon |
+| `badgeLabel`, `badgeTone` | string, list | badge, shown only when both are set |
+| `specs` | array of `spec { text }` | chips on the card |
 | `beginner`, `inStock` | boolean | "principiantes" filter, stock state |
-| `temp`, `ph`, `size`, `mates` | text | care sheet on the product page |
+| `temp`, `ph`, `size`, `mates` | string | care sheet on the product page |
 
-The enum keys are mapped to the Spanish labels in `src/lib/product-mapper.ts`.
-When you add a value to `icon` or `badgeTone` in Strapi, add it to the lists in
-that file too. Draft and publish is off: saving a product makes it live.
+The list keys are mapped to the Spanish labels in
+`src/lib/sanity-product-mapper.ts`. When you add a value to `category`, `icon`
+or `badgeTone` in `studio/schemaTypes/product.ts`, add it to the lists in that
+file too. Sanity keeps drafts: a product goes live when it is published.
 
 The landing page category tiles and decorative images are static and stay in
 `src/data/catalog.ts`.
 
-### Deploying
+### Legacy: Strapi (`cms/`)
 
-Hosting Strapi is not set up yet. `.vercelignore` keeps `cms/` out of the
-storefront deployment. A hosted Strapi needs a persistent database and media
-storage (SQLite and local uploads do not survive on serverless hosts), and
-`STRAPI_URL` / `STRAPI_API_TOKEN` set in the storefront's environment. See
-"Before deploying" in [`cms/README.md`](./cms/README.md).
-
-### Article scaffold
-
-The article loaders, block renderer and `StrapiImage` from the original
-TanStack add-on are still in the repo, unused, for a later guides section. They
-share the server-only client. `getStrapiMedia(url, baseUrl)` in
-`src/lib/strapi-utils.ts` no longer reads a public env var: make media URLs
-absolute on the server, as the product mapper does. `StrapiImage` passes no
-base URL, so a relative Strapi URL would resolve against the storefront origin;
-fix that when the articles are wired up. The article server functions validate
-their input (`src/lib/article-input.ts`) and use the same error sanitiser as
-the product loader.
+The catalogue used to come from a Strapi 5 backend in [`cms/`](./cms). The
+storefront no longer reads it. It is kept until the Sanity setup is verified
+end to end, and is then removed together with `@strapi/client`,
+`src/data/strapi-sdk.ts`, `src/data/strapi-products.ts`,
+`src/lib/product-mapper.ts`, `src/lib/strapi-utils.ts`,
+`src/components/strapi-image.tsx`, `src/data/loaders/articles.ts` and the
+`STRAPI_*` variables in `.env.example`.
 
 
 ## Routing
