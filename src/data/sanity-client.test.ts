@@ -4,6 +4,8 @@ import {
 	getSanityClient,
 	getSanityConfig,
 	readFromSanity,
+	SANITY_MAX_RETRIES,
+	SANITY_TIMEOUT_MS,
 	SANITY_UNAVAILABLE,
 } from "./sanity-client";
 
@@ -67,7 +69,16 @@ describe("getSanityClient", () => {
 			apiVersion: DEFAULT_API_VERSION,
 			useCdn: true,
 			perspective: "published",
+			timeout: SANITY_TIMEOUT_MS,
+			maxRetries: SANITY_MAX_RETRIES,
 		});
+	});
+
+	it("times out a request attempt after ten seconds", () => {
+		getSanityClient();
+		expect(createClient).toHaveBeenCalledWith(
+			expect.objectContaining({ timeout: 10_000 }),
+		);
 	});
 });
 

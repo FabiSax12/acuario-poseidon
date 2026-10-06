@@ -39,12 +39,32 @@ export function getSanityConfig(): SanityConfig {
 }
 
 /**
+ * How long one request attempt waits for Sanity to answer, in milliseconds.
+ * The client's default is five minutes, which holds a slow SSR request until
+ * the platform kills the function.
+ */
+export const SANITY_TIMEOUT_MS = 10_000;
+
+/**
+ * Retries after a failed attempt. The client's default is five and every
+ * attempt gets its own timeout, so retries multiply how long a failing request
+ * can hold the SSR response. One retry still covers a transient failure.
+ */
+export const SANITY_MAX_RETRIES = 1;
+
+/**
  * Sanity client for read queries. The dataset is public, so there is no
  * token: the storefront can only read published documents, through Sanity's
  * API CDN.
  */
 export function getSanityClient(config: SanityConfig = getSanityConfig()) {
-	return createClient({ ...config, useCdn: true, perspective: "published" });
+	return createClient({
+		...config,
+		useCdn: true,
+		perspective: "published",
+		timeout: SANITY_TIMEOUT_MS,
+		maxRetries: SANITY_MAX_RETRIES,
+	});
 }
 
 /** Shown to callers instead of the underlying failure. */

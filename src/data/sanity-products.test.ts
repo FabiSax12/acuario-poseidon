@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SanityProduct } from "#/lib/sanity-product-mapper";
-import { SANITY_UNAVAILABLE } from "./sanity-client";
+import {
+	SANITY_MAX_RETRIES,
+	SANITY_TIMEOUT_MS,
+	SANITY_UNAVAILABLE,
+} from "./sanity-client";
 import { fetchProducts, PRODUCTS_QUERY } from "./sanity-products";
 
 const { fetch, createClient } = vi.hoisted(() => {
@@ -57,6 +61,8 @@ describe("fetchProducts", () => {
 			apiVersion: "2026-01-01",
 			useCdn: true,
 			perspective: "published",
+			timeout: SANITY_TIMEOUT_MS,
+			maxRetries: SANITY_MAX_RETRIES,
 		});
 		expect(fetch).toHaveBeenCalledTimes(1);
 		expect(fetch).toHaveBeenCalledWith(PRODUCTS_QUERY);
