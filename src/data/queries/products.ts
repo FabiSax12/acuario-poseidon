@@ -2,7 +2,11 @@ import { queryOptions } from "@tanstack/react-query";
 import type { Product } from "#/data/catalog";
 import { getProducts } from "#/data/loaders/products";
 
-/** Staff edits in Strapi show up within a minute, without a redeploy. */
+/**
+ * How long a browser tab reuses the list before asking the server again. The
+ * answer itself comes from the CDN (see src/lib/cache-headers.ts), so a staff
+ * edit in Sanity takes about ten minutes at worst to show up.
+ */
 const STALE_TIME = 60_000;
 
 /**
@@ -16,6 +20,6 @@ export const productsQueryOptions = () =>
 		staleTime: STALE_TIME,
 	});
 
-/** `Product.id` is the Strapi slug, which is also the URL segment. */
+/** `Product.id` is the Sanity slug, which is also the URL segment. */
 export const findProduct = (products: Product[], id: string) =>
 	products.find((product) => product.id === id);

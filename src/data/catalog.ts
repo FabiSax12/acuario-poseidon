@@ -2,8 +2,9 @@ import type { BadgeTone } from "#/components/ds/Badge";
 import type { IconName } from "#/components/ds/Icon";
 
 // Storefront domain types plus the static imagery used for navigation and art
-// direction. Products come from Strapi (see src/data/loaders/products.ts and
-// src/lib/product-mapper.ts); the demo set lives in cms/scripts/seed-data.mts.
+// direction. Products come from Sanity (see src/data/loaders/products.ts and
+// src/lib/sanity-product-mapper.ts); the demo set lives in
+// studio/scripts/seed-data.mts.
 
 export type ProductCategory =
 	| "Peces"

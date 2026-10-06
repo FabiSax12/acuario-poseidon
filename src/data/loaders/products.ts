@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { Product } from "#/data/catalog";
-import { fetchProducts } from "#/data/strapi-products";
+import { getProductsHandler } from "#/data/products-handler";
 
-// Server function: Strapi is only ever called from this handler, with the
-// read-only API token. The browser receives plain `Product` objects.
-export const getProducts = createServerFn({ method: "GET" }).handler(
-	(): Promise<Product[]> => fetchProducts(),
+// Server function: Sanity is only ever queried from this handler. The browser
+// receives plain `Product` objects.
+// The response is cached by the CDN and shared between visitors, so it must
+// stay independent of who asks: no cookies, session or per-user data.
+export const getProducts = createServerFn({ method: "GET" }).handler(() =>
+	getProductsHandler(),
 );

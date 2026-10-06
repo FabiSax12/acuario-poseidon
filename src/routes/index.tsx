@@ -2,11 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CatalogError } from "#/components/tienda/CatalogError";
 import { Landing } from "#/components/tienda/Landing";
 import { productsQueryOptions } from "#/data/queries/products";
+import { catalogRouteHeaders } from "#/lib/cache-headers";
 
 export const Route = createFileRoute("/")({
 	loader: async ({ context }) => {
-		await context.queryClient.ensureQueryData(productsQueryOptions());
+		const products = await context.queryClient.ensureQueryData(
+			productsQueryOptions(),
+		);
+		// Read by catalogRouteHeaders: an empty catalogue is not cached.
+		return { productCount: products.length };
 	},
+	headers: catalogRouteHeaders,
 	component: Landing,
 	errorComponent: CatalogError,
 });

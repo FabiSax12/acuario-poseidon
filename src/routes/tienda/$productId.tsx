@@ -4,6 +4,7 @@ import { CatalogError } from "#/components/tienda/CatalogError";
 import { NotFound } from "#/components/tienda/NotFound";
 import { ProductDetail } from "#/components/tienda/ProductDetail";
 import { findProduct, productsQueryOptions } from "#/data/queries/products";
+import { catalogRouteHeaders } from "#/lib/cache-headers";
 
 export const Route = createFileRoute("/tienda/$productId")({
 	loader: async ({ context, params }) => {
@@ -11,7 +12,11 @@ export const Route = createFileRoute("/tienda/$productId")({
 			productsQueryOptions(),
 		);
 		if (!findProduct(products, params.productId)) throw notFound();
+		// Read by catalogRouteHeaders: an empty catalogue is not cached.
+		return { productCount: products.length };
 	},
+	// Not cached when the loader ends in notFound(): see catalogRouteHeaders.
+	headers: catalogRouteHeaders,
 	component: ProductPage,
 	notFoundComponent: ProductNotFound,
 	errorComponent: CatalogError,
@@ -35,7 +40,7 @@ function ProductPage() {
 		select: (products) => findProduct(products, productId),
 	});
 	// The loader already rejects unknown slugs; this covers a product removed
-	// from Strapi while the page is open and the query refetches.
+	// from Sanity while the page is open and the query refetches.
 	if (!product) return <ProductNotFound />;
 	// Keyed so the quantity resets when moving between products.
 	return <ProductDetail key={product.id} product={product} />;
