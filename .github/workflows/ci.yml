@@ -1,0 +1,233 @@
+name: CI
+
+# Validates the storefront and the Studio, then deploys the storefront to
+# Vercel with the Vercel CLI. Vercel's own Git deployments are off (see
+# vercel.json), so this workflow is the only way a deployment is made.
+#
+# Required repository secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+# Optional repository variable: PRODUCTION_URL (smoke test after production).
+# See "Deploy to Vercel" in README.md.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the run it replaces. Runs on main are
+# never cancelled once started, so a production deploy always finishes; a later
+# push waits for it. GitHub keeps one waiting run per group, the newest.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Nitro picks the Vercel function runtime from the Node major that runs the
+  # build (24 gives nodejs24.x). package.json requires >=22.18.
+  NODE_VERSION: "24"
+  # package.json has no packageManager field on purpose, so the version is
+  # pinned here. Keep it on the major that wrote the lockfiles.
+  PNPM_VERSION: "12.9.1"
+  VERCEL_CLI_VERSION: "62.4.0"
+
+jobs:
+  storefront:
+    name: Storefront checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm typecheck
+      - run: pnpm test
+      # The deploy job builds again through `vercel build`. This one covers
+      # pull requests from forks, which are not deployed.
+      - run: pnpm build
+
+  studio:
+    name: Studio checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: studio
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: studio/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  # Preview for pull requests, production for main. The Studio is not deployed
+  # here: it goes to Sanity's hosting by hand with `sanity deploy`.
+  deploy:
+    name: Deploy to Vercel
+    needs: [storefront, studio]
+    # Pull requests from forks and from Dependabot get no secrets, so they are
+    # validated but not deployed. The author is checked, not github.actor,
+    # which becomes whoever re-runs the workflow.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      # Empty when the stale-run guard skips the deploy.
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      DEPLOY_ENV: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      VERCEL_TELEMETRY_DISABLED: "1"
+    # The Vercel secrets are set only on the steps that call the Vercel CLI,
+    # which reads them from the environment, so the token never appears on a
+    # command line and the install steps run without it.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Check the Vercel secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set. See \"Deploy to Vercel\" in README.md."
+              exit 1
+            fi
+          done
+      - run: pnpm install --frozen-lockfile
+      - run: npm install --global "vercel@$VERCEL_CLI_VERSION"
+      # `vercel build` runs pnpm from PATH; this shows which one that is.
+      - name: Print tool versions
+        run: |
+          echo "node $(node --version)"
+          echo "pnpm $(pnpm --version)"
+          echo "vercel $(vercel --version)"
+      # A re-run of an old run on main, or a run overtaken by a newer push,
+      # must not put older code in production. The run for the newer commit
+      # deploys instead.
+      - name: Skip production deploy of a stale commit
+        id: guard
+        run: |
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            remote="$(git ls-remote origin refs/heads/main)"
+            tip="${remote%%[[:space:]]*}"
+            if [ -z "$tip" ]; then
+              echo "::error::Could not read the tip of main, so this run cannot tell whether it is stale."
+              exit 1
+            fi
+            if [ "$tip" != "$GITHUB_SHA" ]; then
+              echo "::notice::Deploy skipped: $GITHUB_SHA is no longer the tip of main ($tip)."
+              echo "Deploy skipped: \`$GITHUB_SHA\` is no longer the tip of \`main\` (\`$tip\`). The run for that commit deploys." >> "$GITHUB_STEP_SUMMARY"
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+      # Downloads the project settings and the environment variables of the
+      # target environment into .vercel/. That directory holds their values:
+      # never cache it or upload it as an artifact.
+      - name: Pull Vercel settings
+        if: steps.guard.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment="$DEPLOY_ENV"
+      # Names only, never values. A warning, not a failure: variables marked
+      # Sensitive in Vercel are not downloaded but still reach the deployment.
+      - name: Check the pulled environment variables
+        if: steps.guard.outputs.deploy == 'true'
+        run: |
+          file=".vercel/.env.$DEPLOY_ENV.local"
+          for name in SANITY_PROJECT_ID SANITY_DATASET; do
+            if ! grep -Eq "^$name=\"?[^\"]" "$file" 2>/dev/null; then
+              echo "::warning::$name was not pulled for the $DEPLOY_ENV environment. Check Settings > Environment Variables in the Vercel project."
+            fi
+          done
+      # Sets VERCEL=1, which makes Nitro emit .vercel/output instead of the
+      # node-server build in .output.
+      - name: Build
+        if: steps.guard.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            vercel build --prod
+          else
+            vercel build
+          fi
+      # The CLI prints the deployment URL on stdout. The output is captured
+      # whole, without a pipe, so a failed deploy still fails the step.
+      - name: Deploy
+        id: deploy
+        if: steps.guard.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            output="$(vercel deploy --prebuilt --prod)"
+          else
+            output="$(vercel deploy --prebuilt)"
+          fi
+          url="${output##*$'\n'}"
+          if [[ ! "$url" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error::vercel deploy succeeded but did not print a deployment URL."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $DEPLOY_ENV: $url" >> "$GITHUB_STEP_SUMMARY"
+      # Checks the public domain, not the deployment URL: Vercel Deployment
+      # Protection answers 401 there.
+      - name: Smoke test production
+        if: steps.guard.outputs.deploy == 'true' && env.DEPLOY_ENV == 'production'
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -z "$PRODUCTION_URL" ]; then
+            echo "::notice::Smoke test skipped: the repository variable PRODUCTION_URL is not set."
+            exit 0
+          fi
+          if ! curl --fail --silent --show-error --location --output /dev/null \
+            --retry 5 --retry-delay 5 --retry-all-errors --max-time 20 "$PRODUCTION_URL"; then
+            echo "::error::$PRODUCTION_URL did not answer with a 2xx status after the production deploy."
+            exit 1
+          fi

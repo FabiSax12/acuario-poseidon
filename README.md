@@ -48,10 +48,99 @@ The storefront runs on Vercel. The catalogue and its editing panel are hosted
 by Sanity (see [Catalogue](#catalogue-sanity)), so there is no server, database
 or media storage to run.
 
-1. Push this repo to GitHub, GitLab, or Bitbucket
-2. In Vercel, choose **Add New > Project** and import the repo
-3. Keep the detected TanStack Start framework settings
-4. Under **Settings > Environment Variables**, add:
+Vercel is only the host. It does not build from Git: `vercel.json` turns its
+Git deployments off (`git.deploymentEnabled: false`), and every deployment is
+made by the GitHub Actions workflow in `.github/workflows/ci.yml` through the
+Vercel CLI.
+
+### What the workflow does
+
+| Event | Checks | Deployment |
+|-------|--------|------------|
+| Pull request from a branch of this repo | storefront and Studio | preview; each run gets its own URL |
+| Pull request from a fork, or opened by Dependabot | storefront and Studio | none (those runs get no secrets) |
+| Push to `main` | storefront and Studio | production |
+| Manual run (**Actions > CI > Run workflow**) | storefront and Studio | production on `main`, preview on any other branch |
+
+The checks are the same commands you can run locally:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm check        # Biome
+pnpm typecheck    # tsc --noEmit
+pnpm test         # Vitest
+pnpm build
+```
+
+and, in `studio/`, `pnpm typecheck` and `pnpm test`. Nothing is deployed unless
+all of them pass.
+
+The deploy job then runs `vercel pull`, `vercel build` and
+`vercel deploy --prebuilt` (with `--prod` on `main`). The build happens on the
+GitHub runner; Vercel receives the finished output. `vercel build` sets
+`VERCEL=1`, which makes Nitro write Vercel Functions and static assets to
+`.vercel/output` instead of the Node server in `.output` that `pnpm build`
+produces locally. `.vercelignore` keeps `studio/` out of the deployment.
+
+The deployment URL is in the run summary and on the `preview` or `production`
+environment of the repo. On a pull request it also appears as a **View
+deployment** button.
+
+Two things in the deploy job do not stop a deployment but are worth reading in
+the run log:
+
+- A warning when `SANITY_PROJECT_ID` or `SANITY_DATASET` did not come down with
+  `vercel pull`. Either the variable is missing for that environment in Vercel,
+  or it is marked Sensitive there, in which case it is not downloaded and the
+  warning can be ignored.
+- After a production deploy, a smoke test requests the shop's public address
+  and fails the run if it does not answer. It only runs when the repository
+  variable `PRODUCTION_URL` is set (see below). It does not undo the deploy.
+
+### Order of deployments
+
+- A newer push to a pull request cancels the run it replaces.
+- A run on `main` is never cancelled once it has started; a later push waits
+  for it. With several quick pushes GitHub keeps only the newest waiting run,
+  so the commits in between are not deployed on their own.
+- Production only ever receives the current tip of `main`. A run for an older
+  commit (an old run that someone re-runs, or one overtaken by a newer push)
+  skips its deploy steps, says so in the summary and ends green.
+- To deploy the current `main` again on purpose, run the workflow by hand on
+  `main` (**Actions > CI > Run workflow**).
+
+### First-time setup
+
+1. Create the Vercel project from the repo root, without importing the repo in
+   the Vercel dashboard:
+
+   ```bash
+   pnpm dlx vercel@62.4.0 login
+   pnpm dlx vercel@62.4.0 link
+   ```
+
+   `vercel link` asks for the team and the project name, creates the project if
+   it does not exist, and writes `.vercel/project.json` (gitignored) with
+   `orgId` and `projectId`.
+
+2. Create a token at **Vercel > Account Settings > Tokens**. Scope it to the
+   team that owns the project and give it an expiry date.
+
+3. In GitHub, under **Settings > Secrets and variables > Actions**, add three
+   repository secrets:
+
+   | Secret | Value |
+   |--------|-------|
+   | `VERCEL_TOKEN` | the token from step 2 |
+   | `VERCEL_ORG_ID` | `orgId` from `.vercel/project.json` |
+   | `VERCEL_PROJECT_ID` | `projectId` from `.vercel/project.json` |
+
+   Optionally, on the **Variables** tab, add the repository variable
+   `PRODUCTION_URL` with the shop's public address (for example
+   `https://<shop-domain>/`) to turn on the smoke test.
+
+4. In the Vercel project, under **Settings > Environment Variables**, add the
+   following for both the Production and the Preview environment:
 
    | Variable | Value |
    |----------|-------|
@@ -60,15 +149,86 @@ or media storage to run.
    | `SANITY_API_VERSION` | optional; defaults to the date pinned in `src/data/sanity-client.ts` |
    | `VITE_SENTRY_DSN` and the other Sentry values | from `.env.example` |
 
-5. Deploy
+5. In the Vercel project, under **Settings > Deployment Protection**, confirm
+   that Vercel Authentication is on for preview deployments. This repo is
+   public, so preview URLs are visible to anyone on GitHub.
 
-Vercel runs the build script and deploys Nitro's output as Vercel Functions and
-static assets. The included `vercel.json` makes framework detection explicit.
-`.vercelignore` keeps `studio/` out of the deployment.
+6. Protect production on the GitHub side (see [Access](#access)).
+
+7. Push to `main`, or run the workflow by hand.
+
+Environment variables live in Vercel only. `vercel pull` downloads the ones of
+the target environment for the build, and the deployed functions read them at
+run time. GitHub holds nothing but the three secrets and the optional variable.
 
 Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
 unprefixed so they remain server-only. The storefront has no Sanity token: do
 not add `SANITY_WRITE_TOKEN` to Vercel.
+
+Leave the Vercel project disconnected from the Git repository. If it is ever
+connected (**Settings > Git**), `vercel.json` still stops Vercel from deploying
+on its own.
+
+The workflow pins the Vercel CLI, pnpm and Node versions at the top of
+`ci.yml`. The Node major used there decides the runtime of the Vercel Functions
+(Node 24 gives `nodejs24.x`).
+
+### Access
+
+A Vercel token cannot be limited to preview deployments. The one in
+`VERCEL_TOKEN` can deploy to production, and a workflow run on any branch of
+this repo can read it. Anyone who can push a branch here can therefore deploy
+to production. Pull requests from forks cannot: they get no secrets.
+
+To narrow that down:
+
+- Protect `main` (**Settings > Branches**): require a pull request and the
+  `Storefront checks` and `Studio checks` status checks.
+- GitHub creates the `preview` and `production` environments on the first run.
+  Under **Settings > Environments > production**, add a deployment branch rule
+  that allows only `main`.
+- Required reviewers on `production` are optional. A run that waits for
+  approval holds the queue on `main`: later pushes wait behind it.
+
+The token expires on the date chosen when it was created. From then on the
+deploy job fails at the "Pull Vercel settings" step with an authentication
+error, while the checks keep passing. To renew it, create a new token in
+Vercel, replace the `VERCEL_TOKEN` secret, and re-run the failed job or run the
+workflow by hand on `main`.
+
+### Rolling back
+
+A rollback points the production domain at an earlier deployment, without a
+rebuild. It does not change `main`, and it does not change the catalogue:
+products live in Sanity and are the same before and after.
+
+1. Find the deployment to restore under **Deployments** in the Vercel
+   dashboard, or with `pnpm dlx vercel@62.4.0 list`.
+2. Roll back to it, from the dashboard (**Instant Rollback**) or with:
+
+   ```bash
+   pnpm dlx vercel@62.4.0 rollback <deployment-url-or-id>
+   ```
+
+3. Fix or revert the faulty commit on `main`. The workflow deploys it as usual.
+4. Promote that new deployment. This step is required: according to Vercel's
+   documentation, after a rollback Vercel stops assigning the production domain
+   to new production deployments, so the fix is deployed but the domain keeps
+   serving the rolled-back deployment until one is promoted. Use **Promote** in
+   the dashboard or:
+
+   ```bash
+   pnpm dlx vercel@62.4.0 promote <deployment-url-or-id>
+   ```
+
+Also according to Vercel's documentation, the Hobby plan can only roll back to
+the production deployment immediately before the current one.
+
+### The Studio
+
+The Sanity Studio is not deployed by the workflow; CI only runs its tests and
+typecheck. Deploy it by hand with `pnpm run deploy` in `studio/` (see
+[`studio/README.md`](./studio/README.md)).
 
 ### CDN cache
 
