@@ -179,11 +179,13 @@ jobs:
               echo "::warning::$name was not pulled for the $DEPLOY_ENV environment. Check Settings > Environment Variables in the Vercel project."
             fi
           done
-      # Sets VERCEL=1, which makes Nitro emit .vercel/output instead of the
-      # node-server build in .output.
+      # NITRO_PRESET makes Nitro emit .vercel/output instead of the node-server
+      # build in .output. Nitro does not detect Vercel on its own here:
+      # `vercel build` outside Vercel does not expose VERCEL=1 to the build.
       - name: Build
         if: steps.guard.outputs.deploy == 'true'
         env:
+          NITRO_PRESET: vercel
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -192,6 +194,11 @@ jobs:
             vercel build --prod
           else
             vercel build
+          fi
+          # Without the server function every request answers 404 NOT_FOUND.
+          if ! compgen -G ".vercel/output/functions/*.func" > /dev/null; then
+            echo "::error::The build produced no Vercel Function in .vercel/output/functions."
+            exit 1
           fi
       # The CLI prints the deployment URL on stdout. The output is captured
       # whole, without a pipe, so a failed deploy still fails the step.
