@@ -5,6 +5,7 @@ export interface ParallaxProps {
 	speed?: number;
 	axis?: "x" | "y";
 	children?: React.ReactNode;
+	className?: string;
 	style?: React.CSSProperties;
 }
 
@@ -12,6 +13,7 @@ export function Parallax({
 	speed = 0.3,
 	axis = "y",
 	children,
+	className,
 	style,
 }: ParallaxProps) {
 	const ref = useRef<HTMLDivElement>(null);
@@ -44,7 +46,11 @@ export function Parallax({
 		};
 	}, [speed, axis]);
 	return (
-		<div ref={ref} style={{ willChange: "transform", ...style }}>
+		<div
+			ref={ref}
+			className={className}
+			style={{ willChange: "transform", ...style }}
+		>
 			{children}
 		</div>
 	);

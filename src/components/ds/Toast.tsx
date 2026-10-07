@@ -40,6 +40,7 @@ export function Toast({
 				gap: 12,
 				width: 360,
 				maxWidth: "100%",
+				overflowWrap: "anywhere",
 				boxSizing: "border-box",
 				padding: "14px 12px 14px 16px",
 				borderRadius: "var(--radius-lg)",
@@ -55,7 +56,13 @@ export function Toast({
 				<Icon name={icon} size={20} />
 			</span>
 			<div
-				style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}
+				style={{
+					flex: 1,
+					minWidth: 0,
+					display: "flex",
+					flexDirection: "column",
+					gap: 3,
+				}}
 			>
 				<span
 					style={{
@@ -79,6 +86,7 @@ export function Toast({
 					<button
 						type="button"
 						onClick={onAction}
+						className="min-h-11 lg:not-pointer-coarse:min-h-0"
 						style={{
 							alignSelf: "flex-start",
 							marginTop: 6,
@@ -99,9 +107,8 @@ export function Toast({
 					type="button"
 					aria-label="Cerrar"
 					onClick={onClose}
+					className="size-11 shrink-0 lg:not-pointer-coarse:size-8"
 					style={{
-						width: 32,
-						height: 32,
 						display: "grid",
 						placeItems: "center",
 						border: 0,

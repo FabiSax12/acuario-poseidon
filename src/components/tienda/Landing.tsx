@@ -18,9 +18,10 @@ function Hero() {
 	return (
 		<section
 			data-screen-label="Inicio — hero"
+			// svh: the hero must fit under mobile browser chrome.
+			className="min-h-svh"
 			style={{
 				position: "relative",
-				minHeight: "100vh",
 				display: "flex",
 				alignItems: "flex-end",
 				overflow: "hidden",
@@ -38,29 +39,32 @@ function Hero() {
 				/>
 			</Parallax>
 			<div
+				// The top padding keeps the copy clear of the fixed nav when the
+				// stacked hero is taller than the screen.
+				className="grid-cols-1 gap-10 px-[var(--gutter)] pt-[120px] pb-[12svh] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:pt-0"
 				style={{
 					position: "relative",
 					width: "100%",
 					maxWidth: "var(--container-max)",
 					margin: "0 auto",
-					padding: "0 var(--gutter) 12vh",
 					boxSizing: "border-box",
 					display: "grid",
-					gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)",
-					gap: 40,
 					alignItems: "end",
 				}}
 			>
 				<Parallax speed={-0.12}>
 					<Reveal>
-						<div className="pos-overline">
+						{/* Wraps on narrow screens, where the overline's line-height of 1
+						    is too tight; `!` because .pos-overline is unlayered. */}
+						<div className="pos-overline max-lg:leading-[1.5]!">
 							Acuario Poseidón · Peces · Peceras · Todo para tu acuario
 						</div>
 					</Reveal>
 					<Reveal delay={120}>
 						<h1
 							style={{
-								font: "400 clamp(56px,8vw,112px)/0.98 var(--font-display)",
+								// 14vw only takes over below 400px, so the longest line still fits.
+								font: "400 min(14vw, clamp(56px,8vw,112px))/0.98 var(--font-display)",
 								letterSpacing: "-.01em",
 								margin: "20px 0 24px",
 							}}
@@ -110,8 +114,11 @@ function Hero() {
 						</div>
 					</Reveal>
 				</Parallax>
+				{/* Desktop only: stacked under the copy it would drift over it, and
+				    the second button above already leads to the same page. */}
 				<Parallax
 					speed={-0.3}
+					className="hidden lg:block"
 					style={{ justifySelf: "end", width: "100%", maxWidth: 340 }}
 				>
 					<Reveal delay={500}>
@@ -161,22 +168,25 @@ function Hero() {
 	);
 }
 
+// 120px by design, reached at 1024px; scales down with narrower screens.
+const MARQUEE_SIZE = "clamp(64px, 11.72vw, 120px)";
+
 function Marquee() {
 	const words =
 		"Peces · Corales · Plantas · Peceras · Alimento · Filtros · Luces · ";
 	return (
 		<div
 			aria-hidden="true"
+			className="pt-8 pb-4 lg:pt-14 lg:pb-6"
 			style={{
 				overflow: "hidden",
-				padding: "56px 0 24px",
 				whiteSpace: "nowrap",
 			}}
 		>
 			<Parallax axis="x" speed={0.6}>
 				<div
 					style={{
-						font: "400 120px/1 var(--font-display)",
+						font: `400 ${MARQUEE_SIZE}/1 var(--font-display)`,
 						color: "transparent",
 						WebkitTextStroke: "1px rgba(111,230,218,.35)",
 						marginLeft: "-30vw",
@@ -188,7 +198,7 @@ function Marquee() {
 			<Parallax axis="x" speed={-0.4}>
 				<div
 					style={{
-						font: "400 120px/1 var(--font-display)",
+						font: `400 ${MARQUEE_SIZE}/1 var(--font-display)`,
 						color: "rgba(255,255,255,.06)",
 						marginLeft: "-60vw",
 					}}
@@ -222,7 +232,7 @@ function CategoryRail() {
 					style={{
 						position: "relative",
 						width: "min(440px,78vw)",
-						height: "min(52vh,480px)",
+						height: "min(52svh,480px)",
 						borderRadius: "var(--radius-xl)",
 						overflow: "hidden",
 						cursor: "pointer",
@@ -320,20 +330,18 @@ function CustomTankTeaser() {
 	return (
 		<section
 			data-screen-label="Inicio — a medida"
+			className="grid-cols-1 gap-10 px-[var(--gutter)] py-[72px] lg:grid-cols-2 lg:gap-16 lg:py-[120px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "120px var(--gutter)",
 				display: "grid",
-				gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
-				gap: 64,
 				alignItems: "center",
 			}}
 		>
 			<div
+				className="h-[300px] sm:h-[420px] lg:h-[560px]"
 				style={{
 					position: "relative",
-					height: 560,
 					borderRadius: "var(--radius-2xl)",
 					overflow: "hidden",
 					boxShadow: "var(--shadow-4)",
@@ -438,10 +446,10 @@ function FeaturedFish() {
 	return (
 		<section
 			data-screen-label="Inicio — destacados"
+			className="px-[var(--gutter)] pt-10 pb-[72px] lg:pb-[120px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "40px var(--gutter) 120px",
 			}}
 		>
 			<div
@@ -492,7 +500,7 @@ function FeaturedFish() {
 									params: { productId: p.id },
 								})
 							}
-							style={{ height: "100%" }}
+							style={{ height: "100%", boxSizing: "border-box" }}
 						/>
 					</Reveal>
 				))}
@@ -505,10 +513,10 @@ function OwnerBand() {
 	return (
 		<section
 			data-screen-label="Inicio — quién te atiende"
+			className="px-[var(--gutter)] py-20 lg:py-[140px]"
 			style={{
 				position: "relative",
 				overflow: "hidden",
-				padding: "140px var(--gutter)",
 			}}
 		>
 			<Parallax speed={0.3} style={{ position: "absolute", inset: "-15% 0" }}>
@@ -521,18 +529,18 @@ function OwnerBand() {
 				/>
 			</Parallax>
 			<div
+				className="grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
 				style={{
 					position: "relative",
 					maxWidth: "var(--container-max)",
 					margin: "0 auto",
 					display: "grid",
-					gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr)",
 					gap: 32,
 					alignItems: "center",
 				}}
 			>
 				<Reveal>
-					<GlassPanel intensity="smoked" padding={48}>
+					<GlassPanel intensity="smoked" padding="clamp(24px, 6vw, 48px)">
 						<div className="pos-overline">Quién te atiende</div>
 						<h2 style={{ font: "var(--type-h1)", margin: "14px 0 20px" }}>
 							Un acuario de barrio, atendido por su dueño.
@@ -559,9 +567,9 @@ function OwnerBand() {
 				</Reveal>
 				<Reveal delay={150}>
 					<div
+						className="aspect-[4/3] lg:aspect-[4/5]"
 						style={{
 							position: "relative",
-							aspectRatio: "4/5",
 							borderRadius: "var(--radius-2xl)",
 							overflow: "hidden",
 							border: "1px solid var(--glass-stroke)",

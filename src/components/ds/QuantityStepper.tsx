@@ -17,11 +17,13 @@ export function QuantityStepper({
 	size = "md",
 	style,
 }: QuantityStepperProps) {
-	const h = size === "sm" ? 36 : 44;
+	// `sm` keeps the 44px touch minimum and only shrinks to its 36px design
+	// size on wide screens without a touch pointer.
+	const sm = size === "sm";
+	const height = sm ? "h-11 lg:not-pointer-coarse:h-9" : "h-11";
+	const square = sm ? "size-11 lg:not-pointer-coarse:size-9" : "size-11";
 	const set = (n: number) => onChange?.(Math.max(min, Math.min(max, n)));
 	const btn = (dis: boolean): React.CSSProperties => ({
-		width: h,
-		height: h,
 		border: 0,
 		padding: 0,
 		borderRadius: "50%",
@@ -33,10 +35,10 @@ export function QuantityStepper({
 	});
 	return (
 		<span
+			className={height}
 			style={{
 				display: "inline-flex",
 				alignItems: "center",
-				height: h,
 				borderRadius: 999,
 				background: "var(--glass-tint-2)",
 				border: "1px solid var(--glass-stroke)",
@@ -51,6 +53,7 @@ export function QuantityStepper({
 				aria-label="Quitar uno"
 				disabled={value <= min}
 				onClick={() => set(value - 1)}
+				className={square}
 				style={btn(value <= min)}
 			>
 				<Icon name="minus" size={16} />
@@ -71,6 +74,7 @@ export function QuantityStepper({
 				aria-label="Añadir uno"
 				disabled={value >= max}
 				onClick={() => set(value + 1)}
+				className={square}
 				style={btn(value >= max)}
 			>
 				<Icon name="plus" size={16} />
