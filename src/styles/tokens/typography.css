@@ -7,12 +7,14 @@
 	--font-mono:
 		"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace;
 
-	--fs-display-xl: 96px;
-	--fs-display-lg: 72px;
-	--fs-display-md: 56px;
-	--fs-h1: 44px;
-	--fs-h2: 34px;
-	--fs-h3: 26px;
+	/* Display and heading sizes are fluid: they shrink on narrow screens and
+	   reach the design value (the upper bound) by 1024px. */
+	--fs-display-xl: clamp(52px, 9.4vw, 96px);
+	--fs-display-lg: clamp(44px, 7.1vw, 72px);
+	--fs-display-md: clamp(36px, 5.5vw, 56px);
+	--fs-h1: clamp(30px, 4.3vw, 44px);
+	--fs-h2: clamp(26px, 3.4vw, 34px);
+	--fs-h3: clamp(22px, 2.6vw, 26px);
 	--fs-h4: 20px;
 	--fs-body-lg: 18px;
 	--fs-body: 16px;

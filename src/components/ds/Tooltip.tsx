@@ -27,6 +27,9 @@ export function Tooltip({
 			{children}
 			<span
 				role="tooltip"
+				// Wraps on narrow screens, where a one-line tip would run off the
+				// viewport; a single line again once there is room for it.
+				className="w-max max-w-[min(260px,calc(100vw-2*var(--gutter)))] whitespace-normal max-lg:leading-[1.35]! lg:max-w-none lg:whitespace-nowrap"
 				style={{
 					position: "absolute",
 					left: "50%",
@@ -34,7 +37,6 @@ export function Tooltip({
 					transform: `translateX(-50%) translateY(${open ? 0 : top ? 4 : -4}px)`,
 					opacity: open ? 1 : 0,
 					pointerEvents: "none",
-					whiteSpace: "nowrap",
 					padding: "8px 12px",
 					borderRadius: 10,
 					font: "500 13px/1.2 var(--font-sans)",

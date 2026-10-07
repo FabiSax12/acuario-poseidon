@@ -9,28 +9,41 @@ const linkStyle: React.CSSProperties = {
 };
 
 const col = (title: string, items: React.ReactNode[]) => (
-	<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+	<div
+		className="gap-1 lg:not-pointer-coarse:gap-3"
+		style={{ display: "flex", flexDirection: "column" }}
+	>
 		<div className="pos-overline" style={{ color: "var(--text-faint)" }}>
 			{title}
 		</div>
 		{items}
 	</div>
 );
+// Links and contact rows keep a 44px touch height; it collapses to the text
+// height on wide screens without a touch pointer.
+const ROW = "flex items-center min-h-11 lg:not-pointer-coarse:min-h-0";
 const link = (label: string, to: "/tienda" | "/peceras-a-medida") => (
-	<Link key={label} to={to} style={linkStyle}>
+	<Link key={label} to={to} className={ROW} style={linkStyle}>
 		{label}
 	</Link>
 );
 // Services without a page yet: the design shows them as links that go nowhere.
 const placeholderLink = (label: string) => (
 	// biome-ignore lint/a11y/useValidAnchor: inert link until these pages exist, as in the design
-	<a key={label} href="#" onClick={(e) => e.preventDefault()} style={linkStyle}>
+	<a
+		key={label}
+		href="#"
+		onClick={(e) => e.preventDefault()}
+		className={ROW}
+		style={linkStyle}
+	>
 		{label}
 	</a>
 );
 const info = (icon: IconName, text: string) => (
 	<div
 		key={text}
+		className={ROW}
 		style={{
 			display: "flex",
 			gap: 10,
@@ -50,19 +63,18 @@ export function Footer() {
 	return (
 		<footer
 			id="contacto"
+			className="px-[var(--gutter)] pt-14 pb-[max(40px,env(safe-area-inset-bottom))] lg:pt-[72px]"
 			style={{
 				background: "var(--abyss-950)",
 				borderTop: "1px solid var(--glass-stroke)",
-				padding: "72px var(--gutter) 40px",
 			}}
 		>
 			<div
+				className="grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:gap-10"
 				style={{
 					maxWidth: "var(--container-max)",
 					margin: "0 auto",
 					display: "grid",
-					gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr",
-					gap: 40,
 				}}
 			>
 				<div
@@ -112,7 +124,9 @@ export function Footer() {
 					paddingTop: 24,
 					borderTop: "1px solid var(--glass-stroke)",
 					display: "flex",
+					flexWrap: "wrap",
 					justifyContent: "space-between",
+					gap: 8,
 					font: "400 13px/1 var(--font-sans)",
 					color: "var(--text-faint)",
 				}}

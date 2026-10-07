@@ -16,7 +16,8 @@ export function HorizontalScroll({
 	header,
 	gap = 24,
 	padding = "var(--gutter)",
-	height = "100vh",
+	// svh: the pinned viewport must fit under mobile browser chrome.
+	height = "100svh",
 	style,
 }: HorizontalScrollProps) {
 	const outer = useRef<HTMLElement>(null);

@@ -60,10 +60,10 @@ export function ProductDetail({ product: p }: { product: Product }) {
 	return (
 		<section
 			data-screen-label="Producto"
+			className="px-[var(--gutter)] pt-[112px] pb-[72px] lg:pt-[130px] lg:pb-[100px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "130px var(--gutter) 100px",
 			}}
 		>
 			<Link
@@ -85,10 +85,9 @@ export function ProductDetail({ product: p }: { product: Product }) {
 				Volver a la tienda
 			</Link>
 			<div
+				className="grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-10"
 				style={{
 					display: "grid",
-					gridTemplateColumns: "minmax(0,1.1fr) minmax(0,1fr)",
-					gap: 40,
 					marginTop: 12,
 					alignItems: "start",
 				}}
@@ -116,7 +115,7 @@ export function ProductDetail({ product: p }: { product: Product }) {
 					</div>
 				</GlassPanel>
 				<div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-					<div style={{ display: "flex", gap: 8 }}>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
 						{p.stock ? (
 							<Badge tone="kelp" dot>
 								En stock
@@ -132,7 +131,16 @@ export function ProductDetail({ product: p }: { product: Product }) {
 						{p.badge && <Badge tone={p.badge.tone}>{p.badge.label}</Badge>}
 					</div>
 					<div>
-						<h1 style={{ font: "var(--type-h1)", fontSize: 52 }}>{p.name}</h1>
+						<h1
+							style={{
+								font: "var(--type-h1)",
+								// 52px by design, reached at 1024px.
+								fontSize: "clamp(34px, 5.1vw, 52px)",
+								overflowWrap: "break-word",
+							}}
+						>
+							{p.name}
+						</h1>
 						<p
 							style={{
 								font: "italic 400 18px/1.4 var(--font-sans)",
@@ -143,7 +151,14 @@ export function ProductDetail({ product: p }: { product: Product }) {
 							{p.latin}
 						</p>
 					</div>
-					<div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+					<div
+						style={{
+							display: "flex",
+							flexWrap: "wrap",
+							alignItems: "baseline",
+							gap: 12,
+						}}
+					>
 						<span
 							style={{ font: "500 36px/1 var(--font-mono)", color: "#fff" }}
 						>
@@ -165,7 +180,8 @@ export function ProductDetail({ product: p }: { product: Product }) {
 							intensity="whisper"
 							padding={6}
 							radius={20}
-							style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}
+							className="grid-cols-1 sm:grid-cols-2"
+							style={{ display: "grid" }}
 						>
 							{specs.map(([ic, l, v, tip]) => (
 								<Tooltip key={l} content={tip} style={{ display: "flex" }}>
@@ -182,7 +198,7 @@ export function ProductDetail({ product: p }: { product: Product }) {
 										<span style={{ color: "var(--tide-300)", marginTop: 2 }}>
 											<Icon name={ic} size={20} />
 										</span>
-										<div>
+										<div style={{ minWidth: 0, overflowWrap: "break-word" }}>
 											<div
 												style={{
 													font: "600 11px/1 var(--font-sans)",
@@ -211,7 +227,14 @@ export function ProductDetail({ product: p }: { product: Product }) {
 							))}
 						</GlassPanel>
 					)}
-					<div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+					<div
+						style={{
+							display: "flex",
+							flexWrap: "wrap",
+							gap: 12,
+							alignItems: "center",
+						}}
+					>
 						<QuantityStepper value={qty} onChange={setQty} max={20} />
 						<Button
 							size="lg"
@@ -241,7 +264,7 @@ export function ProductDetail({ product: p }: { product: Product }) {
 				</div>
 			</div>
 			{related.length > 0 && (
-				<div style={{ marginTop: 80 }}>
+				<div className="mt-14 lg:mt-20">
 					<h2 style={{ font: "var(--type-h2)", marginBottom: 24 }}>
 						También te puede interesar
 					</h2>

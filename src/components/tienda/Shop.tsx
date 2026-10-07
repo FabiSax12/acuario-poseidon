@@ -40,10 +40,10 @@ export function Shop() {
 	return (
 		<section
 			data-screen-label="Tienda"
+			className="px-[var(--gutter)] pt-[112px] pb-20 lg:pt-[140px] lg:pb-[120px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "140px var(--gutter) 120px",
 				position: "relative",
 			}}
 		>
@@ -107,13 +107,14 @@ export function Shop() {
 						style={{ marginLeft: 8 }}
 					/>
 				</div>
-				<Select
-					aria-label="Ordenar"
-					value={sort}
-					onChange={(e) => setSort(e.target.value as SortOption)}
-					options={SORT_OPTIONS}
-					style={{ width: 240 }}
-				/>
+				<div className="w-full sm:w-60">
+					<Select
+						aria-label="Ordenar"
+						value={sort}
+						onChange={(e) => setSort(e.target.value as SortOption)}
+						options={SORT_OPTIONS}
+					/>
+				</div>
 			</div>
 			{items.length === 0 && (
 				<p style={{ color: "var(--text-muted)", padding: "48px 0" }}>

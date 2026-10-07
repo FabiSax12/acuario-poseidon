@@ -10,10 +10,10 @@ export function CatalogError() {
 	return (
 		<section
 			role="alert"
+			className="px-[var(--gutter)] pt-[112px] pb-[72px] lg:pt-[130px] lg:pb-[100px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "130px var(--gutter) 100px",
 			}}
 		>
 			<div className="pos-overline">Catálogo no disponible</div>

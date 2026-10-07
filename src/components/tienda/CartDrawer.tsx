@@ -75,22 +75,25 @@ export function CartDrawer() {
 				cart.map(({ product, qty }) => (
 					<div
 						key={product.id}
+						// Grid so the controls can run under the line total on
+						// narrow drawers instead of squeezing the product name.
 						style={{
-							display: "flex",
-							gap: 14,
-							alignItems: "center",
+							display: "grid",
+							gridTemplateColumns: "72px minmax(0,1fr) auto",
+							columnGap: 14,
 							padding: "14px 0",
 							borderBottom: "1px solid var(--glass-stroke)",
 						}}
 					>
 						<div
+							className="self-start sm:self-center"
 							style={{
+								gridArea: "1 / 1 / span 2",
 								position: "relative",
 								width: 72,
 								height: 72,
 								borderRadius: 14,
 								overflow: "hidden",
-								flexShrink: 0,
 							}}
 						>
 							{product.image ? (
@@ -105,7 +108,14 @@ export function CartDrawer() {
 								<PhotoSlot icon={product.icon} label="" />
 							)}
 						</div>
-						<div style={{ flex: 1, minWidth: 0 }}>
+						<div
+							style={{
+								gridArea: "1 / 2",
+								alignSelf: "end",
+								minWidth: 0,
+								overflowWrap: "anywhere",
+							}}
+						>
 							<div
 								style={{ font: "600 15px/1.3 var(--font-sans)", color: "#fff" }}
 							>
@@ -119,30 +129,39 @@ export function CartDrawer() {
 							>
 								{money(product.price)}
 							</div>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 6,
-									marginTop: 6,
-								}}
-							>
-								<QuantityStepper
-									size="sm"
-									value={qty}
-									onChange={(q) => setQty(product.id, q)}
-								/>
-								<IconButton
-									icon="trash-2"
-									label="Quitar"
-									variant="ghost"
-									size="sm"
-									onClick={() => remove(product.id)}
-								/>
-							</div>
+						</div>
+						<div
+							className="col-span-2 sm:col-span-1"
+							style={{
+								gridRowStart: 2,
+								gridColumnStart: 2,
+								alignSelf: "start",
+								display: "flex",
+								alignItems: "center",
+								gap: 6,
+								marginTop: 6,
+							}}
+						>
+							<QuantityStepper
+								size="sm"
+								value={qty}
+								onChange={(q) => setQty(product.id, q)}
+							/>
+							<IconButton
+								icon="trash-2"
+								label="Quitar"
+								variant="ghost"
+								size="sm"
+								onClick={() => remove(product.id)}
+							/>
 						</div>
 						<span
-							style={{ font: "500 15px/1 var(--font-mono)", color: "#fff" }}
+							className="row-start-1 self-start sm:row-end-[span_2] sm:self-center"
+							style={{
+								gridColumnStart: 3,
+								font: "500 15px/1.3 var(--font-mono)",
+								color: "#fff",
+							}}
 						>
 							{money(product.price * qty)}
 						</span>

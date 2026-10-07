@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { IconButton } from "./IconButton";
 
+// Edge spacing never drops below the device's safe area (notch, home bar).
+const safe = (gap: string) =>
+	["top", "right", "bottom", "left"]
+		.map((side) => `max(${gap}, env(safe-area-inset-${side}))`)
+		.join(" ");
+// Inner horizontal padding: 28px by design, tighter on narrow screens.
+const PAD_X = "clamp(16px, 5vw, 28px)";
+
 export interface DialogProps {
 	open: boolean;
 	onClose?: () => void;
@@ -53,7 +61,7 @@ export function Dialog({
 				display: "flex",
 				alignItems: drawer ? "stretch" : "center",
 				justifyContent: drawer ? "flex-end" : "center",
-				padding: drawer ? 12 : 24,
+				padding: safe(drawer ? "12px" : "clamp(12px, 4vw, 24px)"),
 				background: shown ? "rgba(2,9,13,.5)" : "rgba(2,9,13,0)",
 				backdropFilter: shown ? "blur(6px)" : "blur(0px)",
 				WebkitBackdropFilter: shown ? "blur(6px)" : "blur(0px)",
@@ -97,7 +105,7 @@ export function Dialog({
 						alignItems: "center",
 						justifyContent: "space-between",
 						gap: 16,
-						padding: "20px 20px 0 28px",
+						padding: `20px min(20px, ${PAD_X}) 0 ${PAD_X}`,
 					}}
 				>
 					<h2
@@ -117,13 +125,19 @@ export function Dialog({
 						onClick={onClose}
 					/>
 				</div>
-				<div style={{ padding: "16px 28px 24px", overflowY: "auto", flex: 1 }}>
+				<div
+					style={{
+						padding: `16px ${PAD_X} 24px`,
+						overflowY: "auto",
+						flex: 1,
+					}}
+				>
 					{children}
 				</div>
 				{footer && (
 					<div
 						style={{
-							padding: "18px 28px 24px",
+							padding: `18px ${PAD_X} 24px`,
 							borderTop: "1px solid var(--glass-stroke)",
 							display: "flex",
 							gap: 12,

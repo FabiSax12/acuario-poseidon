@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Icon, type IconName } from "./Icon";
 
-const SIZES = { sm: [36, 16], md: [44, 20], lg: [56, 24] } as const;
+const SIZES = { sm: 16, md: 20, lg: 24 } as const;
+// Diameter as classes so `sm` can grow to the 44px touch minimum; it only
+// drops to its 36px design size on wide screens without a touch pointer.
+const DIAMETER = {
+	sm: "size-11 lg:not-pointer-coarse:size-9",
+	md: "size-11",
+	lg: "size-14",
+} as const;
 
 export interface IconButtonProps {
 	icon: IconName | React.ReactElement;
@@ -13,6 +20,9 @@ export interface IconButtonProps {
 	badge?: number | string | null;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	disabled?: boolean;
+	className?: string;
+	"aria-expanded"?: boolean;
+	"aria-controls"?: string;
 	style?: React.CSSProperties;
 }
 
@@ -24,10 +34,14 @@ export function IconButton({
 	badge,
 	onClick,
 	disabled,
+	className,
+	"aria-expanded": ariaExpanded,
+	"aria-controls": ariaControls,
 	style,
 }: IconButtonProps) {
 	const [hover, setHover] = useState(false);
-	const [d, is] = SIZES[size] || SIZES.md;
+	const is = SIZES[size] || SIZES.md;
+	const diameter = DIAMETER[size] || DIAMETER.md;
 	const V = {
 		glass: {
 			bg: hover ? "var(--glass-tint-3)" : "var(--glass-tint-2)",
@@ -52,15 +66,16 @@ export function IconButton({
 		<button
 			type="button"
 			aria-label={label}
+			aria-expanded={ariaExpanded}
+			aria-controls={ariaControls}
 			title={label}
+			className={className ? `${diameter} ${className}` : diameter}
 			onClick={onClick}
 			disabled={disabled}
 			onMouseEnter={() => setHover(true)}
 			onMouseLeave={() => setHover(false)}
 			style={{
 				position: "relative",
-				width: d,
-				height: d,
 				flexShrink: 0,
 				display: "inline-flex",
 				alignItems: "center",

@@ -2,9 +2,16 @@ import { useState } from "react";
 import { Icon, type IconName } from "./Icon";
 
 const SIZES = {
-	sm: { h: 36, px: 16, fs: 14, gap: 6, icon: 16 },
-	md: { h: 44, px: 22, fs: 15, gap: 8, icon: 18 },
-	lg: { h: 56, px: 30, fs: 17, gap: 10, icon: 20 },
+	sm: { px: 16, fs: 14, gap: 6, icon: 16 },
+	md: { px: 22, fs: 15, gap: 8, icon: 18 },
+	lg: { px: 30, fs: 17, gap: 10, icon: 20 },
+};
+// Height as classes so `sm` can grow to the 44px touch minimum; it only drops
+// to its 36px design size on wide screens without a touch pointer.
+const HEIGHT = {
+	sm: "h-11 lg:not-pointer-coarse:h-9",
+	md: "h-11",
+	lg: "h-14",
 };
 const VARIANTS = {
 	primary: {
@@ -80,6 +87,7 @@ export function Button({
 	href,
 	onClick,
 	type = "button",
+	className,
 	style,
 	...rest
 }: ButtonProps) {
@@ -87,6 +95,7 @@ export function Button({
 	const [down, setDown] = useState(false);
 	const s = SIZES[size] || SIZES.md;
 	const v = VARIANTS[variant] || VARIANTS.primary;
+	const height = HEIGHT[size] || HEIGHT.md;
 	const Tag: React.ElementType = href ? "a" : "button";
 	return (
 		<Tag
@@ -102,13 +111,13 @@ export function Button({
 			}}
 			onMouseDown={() => setDown(true)}
 			onMouseUp={() => setDown(false)}
+			className={className ? `${height} ${className}` : height}
 			style={{
 				display: full ? "flex" : "inline-flex",
 				width: full ? "100%" : undefined,
 				alignItems: "center",
 				justifyContent: "center",
 				gap: s.gap,
-				height: s.h,
 				padding: `0 ${s.px}px`,
 				fontFamily: "var(--font-sans)",
 				fontWeight: 600,

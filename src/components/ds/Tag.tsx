@@ -37,11 +37,11 @@ export function Tag({
 			}}
 			onMouseEnter={() => setHover(true)}
 			onMouseLeave={() => setHover(false)}
+			className="h-11 lg:not-pointer-coarse:h-10"
 			style={{
 				display: "inline-flex",
 				alignItems: "center",
 				gap: 8,
-				height: 40,
 				padding: onRemove ? "0 8px 0 16px" : "0 16px",
 				boxSizing: "border-box",
 				borderRadius: "var(--radius-pill)",

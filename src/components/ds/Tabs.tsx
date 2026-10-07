@@ -45,8 +45,8 @@ export function Tabs<T extends string = string>({
 						aria-selected={on}
 						type="button"
 						onClick={() => onChange?.(v)}
+						className="h-11 shrink-0 lg:not-pointer-coarse:h-10"
 						style={{
-							height: 40,
 							padding: "0 18px",
 							display: "inline-flex",
 							alignItems: "center",

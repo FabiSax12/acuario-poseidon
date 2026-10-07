@@ -16,6 +16,9 @@ const TANK_BACKDROP = {
 	poster: imageUrl("tank-marine-flora"),
 };
 
+// Distance from the toast to the screen edges: 24px by design, less on phones.
+const TOAST_GAP = "clamp(12px, 4vw, 24px)";
+
 interface Screen {
 	/** Nav link highlighted while this route is showing. */
 	navLink: NavLink;
@@ -80,7 +83,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 				/>
 			)}
 			<div
-				style={{ position: "fixed", top: 16, left: 0, right: 0, zIndex: 60 }}
+				className="top-[env(safe-area-inset-top)] lg:top-4"
+				style={{ position: "fixed", left: 0, right: 0, zIndex: 60 }}
 			>
 				<NavBar
 					sticky={false}
@@ -101,8 +105,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 			<div
 				style={{
 					position: "fixed",
-					right: 24,
-					bottom: 24,
+					right: `max(${TOAST_GAP}, env(safe-area-inset-right))`,
+					bottom: `max(${TOAST_GAP}, env(safe-area-inset-bottom))`,
+					maxWidth: `calc(100vw - 2 * ${TOAST_GAP})`,
 					zIndex: 120,
 					transition: "all var(--dur-base) var(--ease-buoy)",
 					opacity: toast ? 1 : 0,

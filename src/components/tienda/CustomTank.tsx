@@ -18,6 +18,15 @@ import {
 import { money } from "#/lib/money";
 import { useStore } from "./StoreProvider";
 
+// Widest the preview gets, in centimetres: the longest tank plus the depth
+// offset of the deepest one (see the RangeSlider limits below).
+const TANK_MAX_SPAN = 200 + 80 * 0.5;
+
+// Padding of the option panels: 28px by design, tighter on narrow screens.
+const PANEL_PAD = "clamp(20px, 5vw, 28px)";
+// Volume and price readouts: 32px by design, smaller on narrow screens.
+const STAT_SIZE = "clamp(24px, 6.5vw, 32px)";
+
 const STANDS: [value: StandType, label: string][] = [
 	["none", "Sin mueble"],
 	["mel", "Melamina"],
@@ -35,26 +44,32 @@ function TankPreview({
 	Hh: number;
 	glass: GlassType;
 }) {
-	const s = 2.2;
-	const w = L * s;
-	const h = Hh * s;
-	const d = W * s * 0.5;
+	// Drawn in centimetres and scaled by --tank-unit: 2.2px per cm by design,
+	// less when the largest tank (200 + 80/2 cm across) would not fit the
+	// enclosing container.
+	const w = L;
+	const h = Hh;
+	const d = W * 0.5;
+	const cm = (n: number) => `calc(${n} * var(--tank-unit))`;
 	return (
 		<div
-			style={{
-				position: "relative",
-				width: w + d,
-				height: h + d,
-				transition: "all var(--dur-slow) var(--ease-current)",
-			}}
+			style={
+				{
+					"--tank-unit": `min(2.2px, 100cqw / ${TANK_MAX_SPAN})`,
+					position: "relative",
+					width: cm(w + d),
+					height: cm(h + d),
+					transition: "all var(--dur-slow) var(--ease-current)",
+				} as React.CSSProperties
+			}
 		>
 			<div
 				style={{
 					position: "absolute",
-					left: d,
+					left: cm(d),
 					top: 0,
-					width: w,
-					height: h,
+					width: cm(w),
+					height: cm(h),
 					border: "1.5px solid rgba(214,251,247,.35)",
 					borderRadius: 4,
 					background: "rgba(63,211,198,.05)",
@@ -65,9 +80,9 @@ function TankPreview({
 				style={{
 					position: "absolute",
 					left: 0,
-					top: d,
-					width: w,
-					height: h,
+					top: cm(d),
+					width: cm(w),
+					height: cm(h),
 					borderRadius: 4,
 					overflow: "hidden",
 					border: `1.5px solid ${glass === "extra" ? "rgba(255,255,255,.75)" : "rgba(166,242,234,.55)"}`,
@@ -90,14 +105,16 @@ function TankPreview({
 					}}
 				/>
 			</div>
+			{/* One user unit is one centimetre, so the edges scale with the boxes. */}
 			<svg
 				aria-hidden="true"
+				viewBox="0 0 1 1"
 				style={{
 					position: "absolute",
-					left: d,
+					left: cm(d),
 					top: 0,
-					width: 1,
-					height: 1,
+					width: cm(1),
+					height: cm(1),
 					overflow: "visible",
 				}}
 			>
@@ -108,6 +125,7 @@ function TankPreview({
 					y2={d}
 					stroke="rgba(214,251,247,.35)"
 					strokeWidth="1.5"
+					vectorEffect="non-scaling-stroke"
 				/>
 				<line
 					x1={w}
@@ -116,6 +134,7 @@ function TankPreview({
 					y2={d}
 					stroke="rgba(214,251,247,.35)"
 					strokeWidth="1.5"
+					vectorEffect="non-scaling-stroke"
 				/>
 				<line
 					x1={w}
@@ -124,6 +143,7 @@ function TankPreview({
 					y2={h + d}
 					stroke="rgba(214,251,247,.35)"
 					strokeWidth="1.5"
+					vectorEffect="non-scaling-stroke"
 				/>
 			</svg>
 		</div>
@@ -146,10 +166,10 @@ export function CustomTank() {
 	return (
 		<section
 			data-screen-label="Peceras a medida"
+			className="px-[var(--gutter)] pt-[112px] pb-[72px] lg:pt-[130px] lg:pb-[100px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "130px var(--gutter) 100px",
 			}}
 		>
 			<div className="pos-overline" style={{ color: "var(--bronze-300)" }}>
@@ -164,20 +184,21 @@ export function CustomTank() {
 				Diseña tu pecera
 			</h1>
 			<div
+				className="grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
 				style={{
 					display: "grid",
-					gridTemplateColumns: "minmax(0,1.15fr) minmax(0,1fr)",
 					gap: 28,
 					alignItems: "start",
 				}}
 			>
+				{/* The preview follows the scroll only beside the controls; stacked
+				    above them it would cover the form. `!` because GlassPanel sets
+				    its position inline. */}
 				<GlassPanel
-					padding={32}
+					padding="clamp(20px, 5vw, 32px)"
 					glow="bronze"
+					className="lg:sticky! lg:top-[100px] lg:min-h-[520px]"
 					style={{
-						position: "sticky",
-						top: 100,
-						minHeight: 520,
 						display: "flex",
 						flexDirection: "column",
 					}}
@@ -185,6 +206,8 @@ export function CustomTank() {
 					<div
 						style={{
 							display: "flex",
+							flexWrap: "wrap",
+							gap: 8,
 							justifyContent: "space-between",
 							alignItems: "center",
 						}}
@@ -202,20 +225,22 @@ export function CustomTank() {
 						</span>
 					</div>
 					<div
+						className="min-h-[200px] lg:min-h-[340px]"
 						style={{
 							flex: 1,
 							display: "grid",
 							placeItems: "center",
 							padding: "24px 0",
-							minHeight: 340,
+							containerType: "inline-size",
 						}}
 					>
 						<TankPreview L={L} W={W} Hh={Hh} glass={glass} />
 					</div>
 					<div
 						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr 1fr",
+							display: "flex",
+							flexWrap: "wrap",
+							justifyContent: "space-between",
 							gap: 16,
 							paddingTop: 20,
 							borderTop: "1px solid var(--glass-stroke)",
@@ -233,7 +258,10 @@ export function CustomTank() {
 								Volumen
 							</div>
 							<div
-								style={{ font: "500 32px/1.2 var(--font-mono)", color: "#fff" }}
+								style={{
+									font: `500 ${STAT_SIZE}/1.2 var(--font-mono)`,
+									color: "#fff",
+								}}
 							>
 								{liters} L
 							</div>
@@ -251,7 +279,7 @@ export function CustomTank() {
 							</div>
 							<div
 								style={{
-									font: "500 32px/1.2 var(--font-mono)",
+									font: `500 ${STAT_SIZE}/1.2 var(--font-mono)`,
 									color: "var(--bronze-300)",
 								}}
 							>
@@ -263,7 +291,7 @@ export function CustomTank() {
 				<div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 					<GlassPanel
 						intensity="smoked"
-						padding={28}
+						padding={PANEL_PAD}
 						style={{ display: "flex", flexDirection: "column", gap: 22 }}
 					>
 						<h3 style={{ font: "var(--type-h4)" }}>1 · Medidas</h3>
@@ -297,7 +325,7 @@ export function CustomTank() {
 					</GlassPanel>
 					<GlassPanel
 						intensity="smoked"
-						padding={28}
+						padding={PANEL_PAD}
 						style={{ display: "flex", flexDirection: "column", gap: 10 }}
 					>
 						<h3 style={{ font: "var(--type-h4)", marginBottom: 6 }}>
@@ -322,10 +350,11 @@ export function CustomTank() {
 							description="Sin tono verde, máxima transparencia"
 							aside={`+${money(extraClearGlassSurcharge(liters))}`}
 						/>
+						{/* Three across only where each card has room for its label. */}
 						<div
+							className="grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3"
 							style={{
 								display: "grid",
-								gridTemplateColumns: "repeat(3,1fr)",
 								gap: 10,
 								marginTop: 6,
 							}}
@@ -346,7 +375,7 @@ export function CustomTank() {
 							))}
 						</div>
 					</GlassPanel>
-					<GlassPanel intensity="smoked" padding={28}>
+					<GlassPanel intensity="smoked" padding={PANEL_PAD}>
 						<h3 style={{ font: "var(--type-h4)", marginBottom: 6 }}>
 							3 · Equipamiento
 						</h3>

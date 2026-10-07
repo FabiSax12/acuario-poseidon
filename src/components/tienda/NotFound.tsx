@@ -15,10 +15,10 @@ export function NotFound({
 	const navigate = useNavigate();
 	return (
 		<section
+			className="px-[var(--gutter)] pt-[112px] pb-[72px] lg:pt-[130px] lg:pb-[100px]"
 			style={{
 				maxWidth: "var(--container-max)",
 				margin: "0 auto",
-				padding: "130px var(--gutter) 100px",
 			}}
 		>
 			<div className="pos-overline">Error 404</div>
