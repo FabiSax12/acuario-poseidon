@@ -40,9 +40,9 @@ const placeholderLink = (label: string) => (
 		{label}
 	</a>
 );
-const info = (icon: IconName, text: string) => (
+const info = (icon: IconName, ...text: string[]) => (
 	<div
-		key={text}
+		key={text[0]}
 		className={ROW}
 		style={{
 			display: "flex",
@@ -55,7 +55,13 @@ const info = (icon: IconName, text: string) => (
 		<span style={{ color: "var(--tide-300)" }}>
 			<Icon name={icon} size={18} />
 		</span>
-		{text}
+		<div>
+			{text.map((t) => (
+				<span key={t} className="block">
+					{t}
+				</span>
+			))}
+		</div>
 	</div>
 );
 
@@ -108,9 +114,9 @@ export function Footer() {
 					placeholderLink("Mantenimiento"),
 				])}
 				{col("Contacto", [
-					info("map-pin", "[Dirección de la tienda]"),
-					info("clock", "[Horario de atención]"),
-					info("phone", "[Teléfono]"),
+					info("map-pin", "Barrio La Caporal, Aguas Zarcas, San Carlos"),
+					info("clock", "Lun a Sab 9:00 - 19:00", "Dom 10:00 - 18:00"),
+					info("phone", "+506 8580 2511"),
 					<div key="s" style={{ display: "flex", gap: 8, marginTop: 6 }}>
 						<IconButton icon="instagram" label="Instagram" size="sm" />
 						<IconButton icon="facebook" label="Facebook" size="sm" />

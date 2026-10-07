@@ -13,6 +13,13 @@ import { productsQueryOptions } from "#/data/queries/products";
 import { PhotoSlot } from "./PhotoSlot";
 import { useStore } from "./StoreProvider";
 
+// The shop's WhatsApp, the same number the footer lists.
+const WHATSAPP_URL = "https://wa.me/50685802511";
+// The shop's Google Maps listing.
+const MAPS_URL = "https://maps.app.goo.gl/tpzBEzGY44NVvhkQ8";
+const WAZE_URL =
+	"https://ul.waze.com/ul?place=ChIJNetuAgBjoI8Rcm5Y5IXpcwo&ll=10.38961820%2C-84.33832080&navigate=yes";
+
 function Hero() {
 	const navigate = useNavigate();
 	return (
@@ -558,9 +565,33 @@ function OwnerBand() {
 								flexWrap: "wrap",
 							}}
 						>
-							<Button iconLeft="message-circle">Escríbenos</Button>
-							<Button variant="glass" iconLeft="map-pin">
-								Cómo llegar
+							<Button
+								iconLeft="message-circle"
+								href={WHATSAPP_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								Escríbenos
+							</Button>
+							<Button
+								variant="glass"
+								iconLeft="map-pin"
+								href={WAZE_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label="Cómo llegar con Waze"
+							>
+								Waze
+							</Button>
+							<Button
+								variant="glass"
+								iconLeft="map-pin"
+								href={MAPS_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label="Cómo llegar con Google Maps"
+							>
+								Google Maps
 							</Button>
 						</div>
 					</GlassPanel>

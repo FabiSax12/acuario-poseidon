@@ -72,6 +72,8 @@ export interface ButtonProps
 	disabled?: boolean;
 	/** Renders an anchor instead of a button. */
 	href?: string;
+	target?: React.HTMLAttributeAnchorTarget;
+	rel?: string;
 	onClick?: React.MouseEventHandler<HTMLElement>;
 	type?: "button" | "submit" | "reset";
 }
