@@ -5,6 +5,7 @@ name: CI
 # vercel.json), so this workflow is the only way a deployment is made.
 #
 # Required repository secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+# Optional repository secret: SENTRY_AUTH_TOKEN (source map upload to Sentry).
 # Optional repository variable: PRODUCTION_URL (smoke test after production).
 # See "Deploy to Vercel" in README.md.
 
@@ -186,6 +187,11 @@ jobs:
         if: steps.guard.outputs.deploy == 'true'
         env:
           NITRO_PRESET: vercel
+          # Tags Sentry events from this build with the environment they run in.
+          VITE_SENTRY_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
+          # Lets the Sentry Vite plugin upload source maps and create the
+          # release. Without it the build still passes and skips the upload.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

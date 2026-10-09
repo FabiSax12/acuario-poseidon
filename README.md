@@ -140,6 +140,10 @@ the run log:
    `PRODUCTION_URL` with the shop's public address (for example
    `https://<shop-domain>/`) to turn on the smoke test.
 
+   Optionally, add the repository secret `SENTRY_AUTH_TOKEN` (a Sentry
+   organization token) so the build uploads source maps to Sentry. Without it
+   the build still passes and production stack traces stay minified.
+
 4. In the Vercel project, under **Settings > Environment Variables**, add the
    following for both the Production and the Preview environment:
 
@@ -148,7 +152,9 @@ the run log:
    | `SANITY_PROJECT_ID` | Sanity project id |
    | `SANITY_DATASET` | `production` |
    | `SANITY_API_VERSION` | optional; defaults to the date pinned in `src/data/sanity-client.ts` |
-   | `VITE_SENTRY_DSN` and the other Sentry values | from `.env.example` |
+   | `VITE_SENTRY_DSN` | DSN of the Sentry project |
+   | `VITE_SENTRY_ORG` | Sentry organization slug |
+   | `VITE_SENTRY_PROJECT` | Sentry project slug |
 
 5. In the Vercel project, under **Settings > Deployment Protection**, confirm
    that Vercel Authentication is on for preview deployments. This repo is
@@ -160,7 +166,9 @@ the run log:
 
 Environment variables live in Vercel only. `vercel pull` downloads the ones of
 the target environment for the build, and the deployed functions read them at
-run time. GitHub holds nothing but the three secrets and the optional variable.
+run time. GitHub holds nothing but the three secrets, the optional variable and
+the optional `SENTRY_AUTH_TOKEN`. That token is used only while building, so it
+stays out of Vercel and never reaches the deployed functions.
 
 Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
 unprefixed so they remain server-only. The storefront has no Sanity token: do
