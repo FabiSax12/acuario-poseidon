@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/tanstackstart-react";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { getContext } from "./integrations/tanstack-query/root-provider";
@@ -15,6 +16,24 @@ export function getRouter() {
 	});
 
 	setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient });
+
+	// The server side is initialized in instrument.server.mjs; keep both in sync.
+	const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+	if (!router.isServer && sentryDsn) {
+		Sentry.init({
+			dsn: sentryDsn,
+			// CI sets VITE_SENTRY_ENVIRONMENT to "production" or "preview" at build time.
+			environment:
+				import.meta.env.VITE_SENTRY_ENVIRONMENT ??
+				(import.meta.env.DEV ? "development" : "production"),
+			dataCollection: {
+				userInfo: false,
+				httpBodies: [],
+			},
+			integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router)],
+			tracesSampleRate: 0.1,
+		});
+	}
 
 	return router;
 }
